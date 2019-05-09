@@ -39,11 +39,11 @@ import time
 import numpy as np
 import argparse
 from sympy import *
+import multiprocessing
 
 class ScallingFunciton():
 
     def __init__(self):
-        s = None
         _a0 = 0
         _a1 = 0
         _a2 = 0
@@ -225,7 +225,7 @@ class AV(RoamingAgent):
 
 def loop(car):
     go_on = True
-    dir = 1
+
     while go_on:
 
         #run updates
@@ -239,7 +239,7 @@ def loop(car):
         Rc = car._current_rotation_r
 
         #find velocity direction
-        velocity_dir = Rc[:,0]  
+        velocity_dir = Rc[:,2]  
         velocity_dir = velocity_dir.reshape(1,3)     
         velocity_dir = 10*np.transpose(velocity_dir)
         run_velocity_dir = carla.Vector3D(x=velocity_dir[0,0],y=velocity_dir[1,0],z=velocity_dir[2,0])
@@ -299,9 +299,18 @@ if __name__ == '__main__':
     client = carla.Client(args.host,args.port)
     try:
         world = client.get_world()          #grab the world
-        actors = world.get_actors()
-        actor = actors.find(118)
-        car = AV(actor,world)
+        actors = world.get_actors()         #grab all actors
+        actor = actors.find(108)            #find a specific car
+        car = AV(actor,world)               #create AV object
+
+        #start parallel process
+        numjobs = 1 
+        jobs = []
+        for i in range(numjobs):
+            p = multiprocessing.Process(target=vehicle_control)
+            jobs.append(p)
+            p.start()
+
         loop(car)
     except rospy.ROSInterruptException:
         pass
