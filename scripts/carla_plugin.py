@@ -8,7 +8,7 @@ import sys
 import time 
 
 try:
-    sys.path.append(glob.glob('/home/matt/Documents/CARLA/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+    sys.path.append(glob.glob('/home/matt/Documents/CybSe/CARLA/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
         sys.version_info.minor,
         'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
@@ -40,6 +40,10 @@ import numpy as np
 import argparse
 from sympy import *
 import multiprocessing
+
+# ==============================================================================
+# -- Robotics ------------------------------------------------------------------
+# ==============================================================================
 
 class ScallingFunciton():
 
@@ -184,7 +188,9 @@ class roboticHelper():
         self.sf._update_function(T,v,a)
 
         
-
+# ==============================================================================
+# -- Autonomous Vehicle --------------------------------------------------------
+# ==============================================================================
 class AV(RoamingAgent):
     rh = roboticHelper()
     def __init__(self,vehicle,world):
@@ -223,46 +229,65 @@ class AV(RoamingAgent):
         self._next_waypoint = self._current_waypoint.next(1)[0]
         self._next_transform = self._next_waypoint.transform
 
+# ==============================================================================
+# -- Vehicle Contorl Process ---------------------------------------------------
+# ==============================================================================
+
+#global intialization for multiprocess sharing
+manager = multiprocessing.Manager()
+velocity_set_args = manager.dict()    
+velocity_set_args['direction_x'] = 0
+velocity_set_args['direction_y'] = 0
+velocity_set_args['direction_z'] = 0
+velocity_set_args['magnitude'] = 1 
+
+def vehicle_control(velocity_set_args,car_id):
+    client = carla.Client(args.host,args.port)
+    world = client.get_world()                  #grab the world
+    actors = world.get_actors()                 #grab all actors
+    car = actors.find(car_id)                   #find a specific car
+    #run vehicle in x direction
+    while True:
+        x_dir = velocity_set_args['direction_x']
+        y_dir = velocity_set_args['direction_y']
+        z_dir = velocity_set_args['direction_z']
+        magnitude = velocity_set_args['magnitude']
+        run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
+        car.set_velocity(magnitude*run_velocity_dir)
+        time.sleep(0.01)
+
+# ==============================================================================
+# -- main loop -----------------------------------------------------------------
+# ==============================================================================
 def loop(car):
-    go_on = True
 
-    while go_on:
+    while True:
 
-        #run updates
+        #path planning updates
         #car._update_current_position()
         #car._update_path()
 
-        #print(car._current_transform.location)
-        #print(car._next_waypoint.transform.location)
-
-        #testing velocity adjustment
+        #current vehicle rotation matrix
         Rc = car._current_rotation_r
 
         #find velocity direction
-        velocity_dir = Rc[:,2]  
+        velocity_dir = Rc[:,0]  
         velocity_dir = velocity_dir.reshape(1,3)     
-        velocity_dir = 10*np.transpose(velocity_dir)
-        run_velocity_dir = carla.Vector3D(x=velocity_dir[0,0],y=velocity_dir[1,0],z=velocity_dir[2,0])
+        velocity_dir = np.transpose(velocity_dir)
 
-        print(run_velocity_dir)
-        #run vehicle in x direction
-        while True:
-            car._vehicle.set_velocity(run_velocity_dir)
-            time.sleep(0.01)
-
-        #Movement form Tc to Tn, transform to use in mr library
-        #Tc = rh._to_transform(car._current_transform)
-        #Tn = rh._to_transform(car._next_transform)
-
+        #update velocity direction and magnitude 
+        #to be handled by vehicle_control Process
+        velocity_set_args['direction_x'] = velocity_dir[0,0]
+        velocity_set_args['direction_y'] = velocity_dir[1,0]
+        velocity_set_args['direction_z'] = velocity_dir[2,0]
+        velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
+        
         #path planning algorithm and scalling function
         #solve for coefficents
         # #s(t) = a0 + a1t + a2t +a3t : s(0) = 0 s(car._sampling_time) = 1
 
         #definiton of path using scaling funciton: X(s) = Tcexp(log(Tc^(-1)Tn)s)
-        #run the path     
-
-        go_on = input("Would you wish to continue: [1] for yes [0] for no:") 
-        
+        #run the path
 
 if __name__ == '__main__':
     #create argument parser
@@ -300,14 +325,19 @@ if __name__ == '__main__':
     try:
         world = client.get_world()          #grab the world
         actors = world.get_actors()         #grab all actors
-        actor = actors.find(108)            #find a specific car
+        for temp in actors:
+            if temp.attributes.has_key('role_name'):
+                role = temp.attributes['role_name']
+                if role == "hero":
+                    actor = temp
+        
         car = AV(actor,world)               #create AV object
 
         #start parallel process
         numjobs = 1 
         jobs = []
         for i in range(numjobs):
-            p = multiprocessing.Process(target=vehicle_control)
+            p = multiprocessing.Process(target=vehicle_control,args=[velocity_set_args,actor.id])
             jobs.append(p)
             p.start()
 
