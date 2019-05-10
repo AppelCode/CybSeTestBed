@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-######################################################################################
-# Setup for carla 
+# ==============================================================================
+# -- Setup ---------------------------------------------------------------------
+# ==============================================================================
 import glob
 import os
 import sys
 import time 
+import signal
 
 try:
     sys.path.append(glob.glob('/home/matt/Documents/CybSe/CARLA/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
@@ -15,16 +17,6 @@ try:
 except IndexError:
     pass
 
-######################################################################################
-"""
-Testing transform waypoints within carls using carla roaming agent to 
-find waypoint path
-
-Current Path and target path will be printed then the user will be asked
-to continue:
-- enter yes 
-
-"""
 import rospy
 
 import carla
@@ -122,24 +114,16 @@ class roboticHelper():
     #    [0            0                                 0                                 1]]
     # 
     def _to_transform(self,carlaTransform):
-        rotation = carlaTransform.rotation
+        rotation = self._to_rotation(carlaTransform.rotation)
         location = carlaTransform.location
-
-        g = rotation.roll
-        b = rotation.pitch
-        a = rotation.yaw
 
         x = location.x
         y = location.y
         z = location.z
 
-        S = self.S
-        C = self.C
+        transform = np.array([])
         
-        return np.array([[C(a)*C(b), C(a)*S(b)*S(g)-S(a)*C(g), C(a)*S(b)*C(g)+S(a)*S(g), x],
-                         [S(a)*C(b), S(a)*S(b)*S(g)+C(a)*C(g), S(a)*S(b)*C(g)-C(a)*S(g), y],
-                         [-S(b), C(b)*S(g), C(b)*C(g), z],
-                         [0, 0, 0, 1]])
+        return transform
     
     def _to_rotation(self,carlaRotation):
         roll = math.radians(carlaRotation.roll)
@@ -178,12 +162,6 @@ class roboticHelper():
         #                 [S(a)*C(b), S(a)*S(b)*S(g)+C(a)*C(g), S(a)*S(b)*C(g)-C(a)*S(g)],
         #                 [-S(b), C(b)*S(g), C(b)*C(g)]])
 
-    def S(self,num):
-        return math.sin(num)
-
-    def C(self,num):
-        return math.cos(num)
-
     def _update_scalling_function(self,T,v,a):
         self.sf._update_function(T,v,a)
 
@@ -191,13 +169,16 @@ class roboticHelper():
 # ==============================================================================
 # -- Autonomous Vehicle --------------------------------------------------------
 # ==============================================================================
-class AV(RoamingAgent):
+#using a gloabl variable for the vehicle will not create link and call descunstrutor 
+#at exit
+
+class AV():
     rh = roboticHelper()
-    def __init__(self,vehicle,world):
-        super(AV,self).__init__(vehicle)
+
+    def __init__(self,world,vehicle_local):
         #vehicle enviroenment setup information
+        self._vehicle = vehicle_local
         self._world = world
-        self._vehicle = vehicle
         self._map = self._world.get_map()
 
         #Path information
@@ -213,12 +194,6 @@ class AV(RoamingAgent):
         #self._next_rotation_c = self._next_waypoint.rotation
         #self._next_rotation_r = self.rh._to_rotation(self._next_waypoint.rotation)
 
-        #map reference SO(3) matrix
-        self._map_orientation_r = np.array([[1,0,0],
-                                            [0,1,0],
-                                            [0,0,1]])     
-        self._map_orientation_r = np.transpose(self._map_orientation_r)
-
     def _update_current_position(self):
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
         self._current_transform = self._current_waypoint.transform
@@ -229,11 +204,19 @@ class AV(RoamingAgent):
         self._next_waypoint = self._current_waypoint.next(1)[0]
         self._next_transform = self._next_waypoint.transform
 
+    def run_step(self):
+        self._update_current_position()
+        self._update_path()
+
+    #def __del__(self):
+        #print("deleted")
+
 # ==============================================================================
 # -- Vehicle Contorl Process ---------------------------------------------------
 # ==============================================================================
 
 #global intialization for multiprocess sharing
+original_sigint = signal.getsignal(signal.SIGINT)
 manager = multiprocessing.Manager()
 velocity_set_args = manager.dict()    
 velocity_set_args['direction_x'] = 0
@@ -242,10 +225,19 @@ velocity_set_args['direction_z'] = 0
 velocity_set_args['magnitude'] = 1 
 
 def vehicle_control(velocity_set_args,car_id):
+
+    def exit_child_process(signum, frame):
+        signal.signal(signal.SIGINT, original_sigint)
+        exit(1)
+    
     client = carla.Client(args.host,args.port)
     world = client.get_world()                  #grab the world
     actors = world.get_actors()                 #grab all actors
     car = actors.find(car_id)                   #find a specific car
+    
+    #process exit request
+    signal.signal(signal.SIGINT, exit_child_process)
+
     #run vehicle in x direction
     while True:
         x_dir = velocity_set_args['direction_x']
@@ -264,8 +256,7 @@ def loop(car):
     while True:
 
         #path planning updates
-        #car._update_current_position()
-        #car._update_path()
+        #car.run_step()
 
         #current vehicle rotation matrix
         Rc = car._current_rotation_r
@@ -289,21 +280,19 @@ def loop(car):
         #definiton of path using scaling funciton: X(s) = Tcexp(log(Tc^(-1)Tn)s)
         #run the path
 
+def exit_handler(signum, frame):
+    signal.signal(signal.SIGINT, original_sigint)
+    print('\ncleaning up and closing carla plugin')
+    sys.exit(1)
+
 if __name__ == '__main__':
     #create argument parser
     argparser = argparse.ArgumentParser(description=__doc__)
     argparser.add_argument(
-        '--carid',
-        metavar = 'ID',
-        default = 0,
+        '--rolename',
+        metavar = 'rolename',
+        default = 'hero',
         help = 'enter id of vehicle to control'
-    )
-    argparser.add_argument(
-        '--newcar',
-        metavar = 'N',
-        default = 0,
-        help = 'create new car = 1, use car in world =1 \
-            (must provide id or new car will be created)'
     )
     argparser.add_argument(
         '--host',
@@ -325,13 +314,15 @@ if __name__ == '__main__':
     try:
         world = client.get_world()          #grab the world
         actors = world.get_actors()         #grab all actors
+
         for temp in actors:
             if temp.attributes.has_key('role_name'):
                 role = temp.attributes['role_name']
                 if role == "hero":
                     actor = temp
-        
-        car = AV(actor,world)               #create AV object
+
+        #set gloabl vehicle 
+        car = AV(world,actor)
 
         #start parallel process
         numjobs = 1 
@@ -341,6 +332,11 @@ if __name__ == '__main__':
             jobs.append(p)
             p.start()
 
+        #exit callback
+        signal.signal(signal.SIGINT, exit_handler)
+
+        #main loop
         loop(car)
+        
     except rospy.ROSInterruptException:
         pass
