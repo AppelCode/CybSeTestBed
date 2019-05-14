@@ -9,15 +9,19 @@ import sys
 import time 
 import signal
 
-try:
-    sys.path.append(glob.glob('/home/matt/Documents/CybSe/CARLA/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
-        sys.version_info.major,
-        sys.version_info.minor,
-        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
-except IndexError:
-    pass
+#try:
+#    sys.path.append(glob.glob('/home/matt/Documents/CybSe/CARLA/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+#        sys.version_info.major,
+#        sys.version_info.minor,
+#        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+#except IndexError:
+#    pass
 
 import rospy
+from carla_matlab_dynamics_ros_plugin.msg import PathPlanner
+from ackermann_msgs.msg import AckermannDrive
+from geometry_msgs.msg import Twist
+from std_msgs.msg import Float32
 
 import carla
 from agents.navigation.agent import Agent, AgentState
@@ -34,9 +38,28 @@ from sympy import *
 import multiprocessing
 
 # ==============================================================================
+# -- Global declaration --------------------------------------------------------
+# ==============================================================================
+
+#global intialization for multiprocess sharing
+original_sigint = signal.getsignal(signal.SIGINT)
+manager = multiprocessing.Manager()
+velocity_set_args = manager.dict()    
+velocity_set_args['direction_x'] = 0
+velocity_set_args['direction_y'] = 0
+velocity_set_args['direction_z'] = 0
+velocity_set_args['magnitude'] = 1 
+
+velocity_set_args['x_angular_vel'] = 0
+velocity_set_args['y_angular_vel'] = 0
+velocity_set_args['z_angular_vel'] = 0
+    
+
+# ==============================================================================
 # -- Robotics ------------------------------------------------------------------
 # ==============================================================================
 
+#class used for trajectory generation
 class ScallingFunciton():
 
     def __init__(self):
@@ -46,6 +69,14 @@ class ScallingFunciton():
         _a3 = 0
 
     #solve for scalling based on current dynamics
+    #
+    # param T: length of time of the movement
+    # param v: velocity of the movement
+    # param a: acceleration of the movement
+    #
+    # update function s(t) : s -> [0,1] coeffiecents a0,a1,a2,a4 where params 
+    # are adhered to 
+    #
     def _update_function(self,T,v,a):
 
         a0,a1,a2,a3,t = symbols('a0 a1 a2 a3 t')
@@ -91,6 +122,7 @@ class ScallingFunciton():
         except:
             print('no a0 in solution dict')
 
+        #update coeeficnets
         self._a0 = a0
         self._a1 = a1
         self._a2 = a2
@@ -98,7 +130,7 @@ class ScallingFunciton():
         
 
 
-class roboticHelper():
+class RoboticHelper():
     
     def __init__(self):
         self.sf = ScallingFunciton()
@@ -155,15 +187,18 @@ class roboticHelper():
             [0, math.sin(roll), math.cos(roll)]
         ])
 
-        print(roll,pitch,yaw)
         return np.matmul(yaw_matrix, pitch_matrix, roll_matrix)
 
         #return np.array([[C(a)*C(b), C(a)*S(b)*S(g)-S(a)*C(g), C(a)*S(b)*C(g)+S(a)*S(g)],
         #                 [S(a)*C(b), S(a)*S(b)*S(g)+C(a)*C(g), S(a)*S(b)*C(g)-C(a)*S(g)],
         #                 [-S(b), C(b)*S(g), C(b)*C(g)]])
 
+    def _convert_orientation(self,rotation_matrix,array):
+        return np.matmul(array,rotation_matrix)
+
     def _update_scalling_function(self,T,v,a):
         self.sf._update_function(T,v,a)
+
 
         
 # ==============================================================================
@@ -172,41 +207,108 @@ class roboticHelper():
 #using a gloabl variable for the vehicle will not create link and call descunstrutor 
 #at exit
 
-class AV():
-    rh = roboticHelper()
+class AV(RoamingAgent):
+    # Robotic Helper is used for Screw Theory Mathmatics, northwestern modern robotics 
+    # source cited in imports
+    rh = RoboticHelper()
 
+    # World orientation is left hand cooridinate 
+    world_orientation = np.array([[1, 0, 0],
+                                  [0, 0, 1],
+                                  [0, 1, 0]])
+    
     def __init__(self,world,vehicle_local):
+        #super(AV,self).__init__(vehicle_local)
         #vehicle enviroenment setup information
         self._vehicle = vehicle_local
         self._world = world
         self._map = self._world.get_map()
+        
+        #vehicle specific information
+        self.role_name = "hero"
+        self._set_speed = None
+        self._twist = np.array([0,0,0,0,0,0])
 
-        #Path information
+        #waypoint generator
+        self._local_planner = LocalPlanner(self._vehicle)
+
+        #Path information initialization
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
         self._current_transform_c =self._current_waypoint.transform
-        self._current_transform_r = self.rh._to_transform(self._current_waypoint.transform)
+        self._current_transform_r = self.rh._to_transform(self._current_transform_c)
         self._current_rotation_c =self._current_transform_c.rotation
         self._current_rotation_r = self.rh._to_rotation(self._current_transform_c.rotation)
 
-        #self._next_waypoint = self._current_waypoint.next(1)[0]
-        #self._next_transform_c = self._next_waypoint.transform
-        #self._next_transform_r = self.rh._to_transform(self._next_waypoint.transform)
-        #self._next_rotation_c = self._next_waypoint.rotation
-        #self._next_rotation_r = self.rh._to_rotation(self._next_waypoint.rotation)
+        self._next_waypoint = self._current_waypoint.next(1)[0]
+        self._next_transform_c = self._next_waypoint.transform
+        self._next_transform_r = self.rh._to_transform(self._next_transform_c)
+        self._next_rotation_c = self._next_transform_c.rotation
+        self._next_rotation_r = self.rh._to_rotation(self._next_rotation_c)
 
+        #Ros definitions
+        # matalb model velocity to carla
+        self.control_subscriber = rospy.Subscriber(
+            "/carla_plugin/" + self.role_name + "/vehicle_model_velocity",
+            Twist, self._update_vehicle_velocity)
+
+        # matlab model steering to carla
+        self.control_subscriber = rospy.Subscriber(
+            "/carla_plugin/" + self.role_name + "/vehicle_model_steering",
+            Float32, self._update_vehicle_steering)
+
+        # to send ackermann set values to matlab
+        self.carla_path_publisher = rospy.Publisher(
+            "/carla_plugin/" + self.role_name + "/vehicle_set_values",
+            AckermannDrive, queue_size=1)
+
+        # to send path plan to matlab
+        self.carla_path_publisher = rospy.Publisher(
+            "/carla_plugin/" + self.role_name + "/vehicle_path",
+            PathPlanner, queue_size=1)
+
+    #used to udate current vehicle orientation and location
     def _update_current_position(self):
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
-        self._current_transform = self._current_waypoint.transform
-        self._current_location = self._current_transform.location
-        self._current_rotation = self._current_transform.rotation
+        self._current_transform_c =self._current_waypoint.transform
+        self._current_transform_r = self.rh._to_transform(self._current_transform_c)
+        self._current_rotation_c =self._current_transform_c.rotation
+        self._current_rotation_r = self.rh._to_rotation(self._current_transform_c.rotation)
 
+    #updates current position and
+    #updates target waypoint
     def _update_path(self):
-        self._next_waypoint = self._current_waypoint.next(1)[0]
-        self._next_transform = self._next_waypoint.transform
 
-    def run_step(self):
         self._update_current_position()
+        self._next_waypoint = self._local_planner.run_step()
+        self._next_transform_c = self._next_waypoint.transform
+        self._next_transform_r = self.rh._to_transform(self._next_transform_c)
+        self._next_rotation_c = self._next_transform_c.rotation
+        self._next_rotation_r = self.rh._to_rotation(self._next_rotation_c)
+
+    #ROS callback used to update linear and angular velocity from matlab
+    def _update_vehicle_velocity(self, vehicle_model_velocity):
+        linear_vel = vehicle_model_velocity.linear
+        temp_linear = np.array([0,0,0])
+        temp_linear[0] = linear_vel.x
+        temp_linear[1] = linear_vel.y
+        temp_linear[2] = linear_vel.z
+        temp_linear = self.rh._convert_orientation(self.world_orientation,temp_linear)
+
+        angular_vel = vehicle_model_velocity.angular
+        temp_angular = np.array([0,0,0])
+        temp_angular[3] = angular_vel.x
+        temp_angular[4] = angular_vel.y
+        temp_angular[5] = angular_vel.z
+        temp_angular = self.rh._convert_orientation(self.world_orientation,temp_angular)
+
+    #ROS callback used to update steering angle
+    def _update_vehicle_steering(self,angle):
+        self.steering_angle = angle 
+        
+   def run_step(self):
+        self._set_speed = self._vehicle.get_speed_limit()
         self._update_path()
+
 
     #def __del__(self):
         #print("deleted")
@@ -215,15 +317,7 @@ class AV():
 # -- Vehicle Contorl Process ---------------------------------------------------
 # ==============================================================================
 
-#global intialization for multiprocess sharing
-original_sigint = signal.getsignal(signal.SIGINT)
-manager = multiprocessing.Manager()
-velocity_set_args = manager.dict()    
-velocity_set_args['direction_x'] = 0
-velocity_set_args['direction_y'] = 0
-velocity_set_args['direction_z'] = 0
-velocity_set_args['magnitude'] = 1 
-
+#process used to move vehicle in carla
 def vehicle_control(velocity_set_args,car_id):
 
     def exit_child_process(signum, frame):
@@ -253,13 +347,21 @@ def vehicle_control(velocity_set_args,car_id):
 # ==============================================================================
 def loop(car):
 
+    car._vehicle.set_simulate_physics(True)
+
     while True:
 
-        #path planning updates
-        #car.run_step()
+        #path planning updates, map based AV 
+        car.run_step()
+        max_speed = car._set_speed
+        print("current location: (%s, %s, %s)"%(car._current_transform_c.location.x, \
+            car._current_transform_c.location.y,car._current_transform_c.location.z))
+        print("next location   : (%s, %s, %s)"%(car._next_transform_c.location.x, \
+            car._next_transform_c.location.y,car._next_transform_c.location.z))
 
         #current vehicle rotation matrix
         Rc = car._current_rotation_r
+        Rn = car._next_rotation_r
 
         #find velocity direction
         velocity_dir = Rc[:,0]  
@@ -271,8 +373,13 @@ def loop(car):
         velocity_set_args['direction_x'] = velocity_dir[0,0]
         velocity_set_args['direction_y'] = velocity_dir[1,0]
         velocity_set_args['direction_z'] = velocity_dir[2,0]
+
+        velocity_set_args['x_angular_vel'] = 0
+        velocity_set_args['y_angular_vel'] = 0
+        velocity_set_args['z_angular_vel'] = 0
+
         velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
-        
+
         #path planning algorithm and scalling function
         #solve for coefficents
         # #s(t) = a0 + a1t + a2t +a3t : s(0) = 0 s(car._sampling_time) = 1
@@ -337,6 +444,6 @@ if __name__ == '__main__':
 
         #main loop
         loop(car)
-        
+
     except rospy.ROSInterruptException:
         pass

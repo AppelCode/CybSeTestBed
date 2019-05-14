@@ -81,10 +81,10 @@ class LocalPlanner(object):
         # initializing controller
         self._init_controller(opt_dict)
 
-    def __del__(self):
-        if self._vehicle:
-            self._vehicle.destroy()
-        print("Destroying ego-vehicle!")
+    #def __del__(self):
+    #    if self._vehicle:
+    #        self._vehicle.destroy()
+    #    print("Destroying ego-vehicle!")
 
     def reset_vehicle(self):
         self._vehicle = None
@@ -223,7 +223,8 @@ class LocalPlanner(object):
         # target waypoint
         self.target_waypoint, self._target_road_option = self._waypoint_buffer[0]
         # move using PID controllers
-        control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
+        #control is currently turned off
+        #control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         # purge the queue of obsolete waypoints
         vehicle_transform = self._vehicle.get_transform()
@@ -240,7 +241,7 @@ class LocalPlanner(object):
         if debug:
             draw_waypoints(self._vehicle.get_world(), [self.target_waypoint], self._vehicle.get_location().z + 1.0)
 
-        return control
+        return self.target_waypoint
 
 
 def _retrieve_options(list_waypoints, current_waypoint):

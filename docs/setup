@@ -1,0 +1,33 @@
+Carla -> vehicle
+
+vehicle -> control
+
+control 
+- steering input
+- throttle input 
+- brake input
+- gear shift
+- etc.
+
+vehicle -> plug in control -> matlab output
+
+plug in control
+- velocity (x,y,z)
+- angular velocity (pitch,roll,yaw)
+
+matlab dynamics -> matlab inputs -> carla outputs
+
+matlab inputs / carla out messages
+- AckermannDrive Message on topic /carla/hero/ackermann_cmd
+    - desired velocity (set speed limit m/s)
+    - desired steeering angle (radians)
+
+- Pose message
+    - current transformation
+    - target transformation
+
+carla inputs / matlab outputs
+- Twist
+    - velocity
+    - angular velocity
+- steering angle
