@@ -21,7 +21,9 @@ import rospy
 from carla_matlab_dynamics_ros_plugin.msg import PathPlanner
 from ackermann_msgs.msg import AckermannDrive
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Float32
+from std_msgs.msg import Float64
+from std_msgs.msg import Int16
+from std_msgs.msg import String
 
 import carla
 from agents.navigation.agent import Agent, AgentState
@@ -36,24 +38,7 @@ import numpy as np
 import argparse
 from sympy import *
 import multiprocessing
-
-# ==============================================================================
-# -- Global declaration --------------------------------------------------------
-# ==============================================================================
-
-#global intialization for multiprocess sharing
-original_sigint = signal.getsignal(signal.SIGINT)
-manager = multiprocessing.Manager()
-velocity_set_args = manager.dict()    
-velocity_set_args['direction_x'] = 0
-velocity_set_args['direction_y'] = 0
-velocity_set_args['direction_z'] = 0
-velocity_set_args['magnitude'] = 1 
-
-velocity_set_args['x_angular_vel'] = 0
-velocity_set_args['y_angular_vel'] = 0
-velocity_set_args['z_angular_vel'] = 0
-    
+from threading import Lock
 
 # ==============================================================================
 # -- Robotics ------------------------------------------------------------------
@@ -199,7 +184,77 @@ class RoboticHelper():
     def _update_scalling_function(self,T,v,a):
         self.sf._update_function(T,v,a)
 
+# ==============================================================================
+# -- Vehicle Contorl Process ---------------------------------------------------
+# ==============================================================================
 
+class VehicleVelocityControl():
+    def __init__(self,id):
+        self.car_id = id 
+        self.original_sigint = signal.getsignal(signal.SIGINT)
+        self.manager = multiprocessing.Manager()
+        self.velocity_set_args = self.manager.dict()    
+        self.velocity_set_args['direction_x'] = 0
+        self.velocity_set_args['direction_y'] = 0
+        self.velocity_set_args['direction_z'] = 0
+        self.velocity_set_args['magnitude'] = 0 
+        self.velocity_set_args['x_angular_vel'] = 0
+        self.velocity_set_args['y_angular_vel'] = 0
+        self.velocity_set_args['z_angular_vel'] = 0
+        self.mutex = Lock()
+
+        #start parallel process
+        numjobs = 1 
+        jobs = []
+        for i in range(numjobs):
+            p = multiprocessing.Process(target=self.vehicle_control)
+            jobs.append(p)
+            p.start()
+
+    #process used to move vehicle in carla
+    def vehicle_control(self):
+
+        def exit_child_process(signum, frame):
+            signal.signal(signal.SIGINT, self.original_sigint)
+            exit(1)
+        
+        client = carla.Client(args.host,args.port)
+        world = client.get_world()                  #grab the world
+        actors = world.get_actors()                 #grab all actors
+        car = actors.find(self.car_id)                   #find a specific car
+        
+        #process exit request
+        signal.signal(signal.SIGINT, exit_child_process)
+
+        #run vehicle in x direction
+        while True:
+
+            self.mutex.acquire()
+            try:  
+                magnitude = self.velocity_set_args['magnitude']
+                x_dir = self.velocity_set_args['direction_x']
+                y_dir = self.velocity_set_args['direction_y']
+                z_dir = self.velocity_set_args['direction_z']
+
+                x_dir = magnitude*x_dir
+                y_dir = magnitude*y_dir
+                z_dir = magnitude*z_dir
+
+            finally:
+                self.mutex.release()
+
+                run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
+                car.set_velocity(run_velocity_dir)
+                time.sleep(0.01)
+        
+    def _update_vehicle_velocity(self,twist):
+        self.velocity_set_args['direction_x'] = twist[0]
+        self.velocity_set_args['direction_y'] = twist[1]
+        self.velocity_set_args['direction_z'] = twist[2]
+        self.velocity_set_args['x_angular_vel'] = twist[3]
+        self.velocity_set_args['y_angular_vel'] = twist[4]
+        self.velocity_set_args['z_angular_vel'] = twist[5]
+        
         
 # ==============================================================================
 # -- Autonomous Vehicle --------------------------------------------------------
@@ -227,7 +282,12 @@ class AV(RoamingAgent):
         #vehicle specific information
         self.role_name = "hero"
         self._set_speed = None
+
+        #vehicle velocity (updated through ros, from matlab model)
         self._twist = np.array([0,0,0,0,0,0])
+        
+        #vehicle control process class
+        self.vc = VehicleVelocityControl(self._vehicle.id)
 
         #waypoint generator
         self._local_planner = LocalPlanner(self._vehicle)
@@ -247,14 +307,19 @@ class AV(RoamingAgent):
 
         #Ros definitions
         # matalb model velocity to carla
-        self.control_subscriber = rospy.Subscriber(
+        self.control_vel_subscriber = rospy.Subscriber(
             "/carla_plugin/" + self.role_name + "/vehicle_model_velocity",
             Twist, self._update_vehicle_velocity)
 
         # matlab model steering to carla
-        self.control_subscriber = rospy.Subscriber(
+        self.control__steering_subscriber = rospy.Subscriber(
             "/carla_plugin/" + self.role_name + "/vehicle_model_steering",
-            Float32, self._update_vehicle_steering)
+            Float64, self._update_vehicle_steering)
+        
+        # test ros connection
+        self.test_subscriber = rospy.Subscriber(
+            "/carla_plugin/" + self.role_name + "/vehicle_model_test",
+            Float64, self._test_ros)
 
         # to send ackermann set values to matlab
         self.carla_path_publisher = rospy.Publisher(
@@ -265,6 +330,11 @@ class AV(RoamingAgent):
         self.carla_path_publisher = rospy.Publisher(
             "/carla_plugin/" + self.role_name + "/vehicle_path",
             PathPlanner, queue_size=1)
+
+        rospy.init_node(self.role_name, anonymous=True)
+
+    def _test_ros(self,mag):
+        self.vc.velocity_set_args['magnitude'] = mag.data
 
     #used to udate current vehicle orientation and location
     def _update_current_position(self):
@@ -289,58 +359,38 @@ class AV(RoamingAgent):
     def _update_vehicle_velocity(self, vehicle_model_velocity):
         linear_vel = vehicle_model_velocity.linear
         temp_linear = np.array([0,0,0])
-        temp_linear[0] = linear_vel.x
-        temp_linear[1] = linear_vel.y
-        temp_linear[2] = linear_vel.z
+        temp_linear[0] = linear_vel.x.data
+        temp_linear[1] = linear_vel.y.data
+        temp_linear[2] = linear_vel.z.data
         temp_linear = self.rh._convert_orientation(self.world_orientation,temp_linear)
+        self._twist[0:3] = temp_linear
+        
 
         angular_vel = vehicle_model_velocity.angular
         temp_angular = np.array([0,0,0])
-        temp_angular[3] = angular_vel.x
-        temp_angular[4] = angular_vel.y
-        temp_angular[5] = angular_vel.z
+        temp_angular[3] = angular_vel.x.data
+        temp_angular[4] = angular_vel.y.data
+        temp_angular[5] = angular_vel.z.data
         temp_angular = self.rh._convert_orientation(self.world_orientation,temp_angular)
+        self._twist[3:6] = temp_angular
+
+        self.vc.mutex.acquire()
+        try:
+            self.vc._update_vehicle_velocity(self._twist)
+        finally:
+            self.vc.mutex.release()
 
     #ROS callback used to update steering angle
     def _update_vehicle_steering(self,angle):
         self.steering_angle = angle 
         
-   def run_step(self):
+    def run_step(self):
         self._set_speed = self._vehicle.get_speed_limit()
         self._update_path()
 
 
     #def __del__(self):
         #print("deleted")
-
-# ==============================================================================
-# -- Vehicle Contorl Process ---------------------------------------------------
-# ==============================================================================
-
-#process used to move vehicle in carla
-def vehicle_control(velocity_set_args,car_id):
-
-    def exit_child_process(signum, frame):
-        signal.signal(signal.SIGINT, original_sigint)
-        exit(1)
-    
-    client = carla.Client(args.host,args.port)
-    world = client.get_world()                  #grab the world
-    actors = world.get_actors()                 #grab all actors
-    car = actors.find(car_id)                   #find a specific car
-    
-    #process exit request
-    signal.signal(signal.SIGINT, exit_child_process)
-
-    #run vehicle in x direction
-    while True:
-        x_dir = velocity_set_args['direction_x']
-        y_dir = velocity_set_args['direction_y']
-        z_dir = velocity_set_args['direction_z']
-        magnitude = velocity_set_args['magnitude']
-        run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
-        car.set_velocity(magnitude*run_velocity_dir)
-        time.sleep(0.01)
 
 # ==============================================================================
 # -- main loop -----------------------------------------------------------------
@@ -370,15 +420,15 @@ def loop(car):
 
         #update velocity direction and magnitude 
         #to be handled by vehicle_control Process
-        velocity_set_args['direction_x'] = velocity_dir[0,0]
-        velocity_set_args['direction_y'] = velocity_dir[1,0]
-        velocity_set_args['direction_z'] = velocity_dir[2,0]
+        car.vc.velocity_set_args['direction_x'] = velocity_dir[0,0]
+        car.vc.velocity_set_args['direction_y'] = velocity_dir[1,0]
+        car.vc.velocity_set_args['direction_z'] = velocity_dir[2,0]
 
-        velocity_set_args['x_angular_vel'] = 0
-        velocity_set_args['y_angular_vel'] = 0
-        velocity_set_args['z_angular_vel'] = 0
+        car.vc.velocity_set_args['x_angular_vel'] = 0
+        car.vc.velocity_set_args['y_angular_vel'] = 0
+        car.vc.velocity_set_args['z_angular_vel'] = 0
 
-        velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
+        car.vc.velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
 
         #path planning algorithm and scalling function
         #solve for coefficents
@@ -388,7 +438,6 @@ def loop(car):
         #run the path
 
 def exit_handler(signum, frame):
-    signal.signal(signal.SIGINT, original_sigint)
     print('\ncleaning up and closing carla plugin')
     sys.exit(1)
 
@@ -430,14 +479,6 @@ if __name__ == '__main__':
 
         #set gloabl vehicle 
         car = AV(world,actor)
-
-        #start parallel process
-        numjobs = 1 
-        jobs = []
-        for i in range(numjobs):
-            p = multiprocessing.Process(target=vehicle_control,args=[velocity_set_args,actor.id])
-            jobs.append(p)
-            p.start()
 
         #exit callback
         signal.signal(signal.SIGINT, exit_handler)
