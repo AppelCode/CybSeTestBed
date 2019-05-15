@@ -9,6 +9,7 @@ import sys
 import time 
 import signal
 
+#uncomment and adjust if carla is not in your pyhton path
 #try:
 #    sys.path.append(glob.glob('/home/matt/Documents/CybSe/CARLA/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
 #        sys.version_info.major,
@@ -41,7 +42,7 @@ import multiprocessing
 from threading import Lock
 
 # ==============================================================================
-# -- Robotics ------------------------------------------------------------------
+# -- Robotics Stuff ------------------------------------------------------------
 # ==============================================================================
 
 #class used for trajectory generation
@@ -112,8 +113,6 @@ class ScallingFunciton():
         self._a1 = a1
         self._a2 = a2
         self._a3 = a3
-        
-
 
 class RoboticHelper():
     
@@ -255,7 +254,6 @@ class VehicleVelocityControl():
         self.velocity_set_args['y_angular_vel'] = twist[4]
         self.velocity_set_args['z_angular_vel'] = twist[5]
         
-        
 # ==============================================================================
 # -- Autonomous Vehicle --------------------------------------------------------
 # ==============================================================================
@@ -388,7 +386,6 @@ class AV(RoamingAgent):
         self._set_speed = self._vehicle.get_speed_limit()
         self._update_path()
 
-
     #def __del__(self):
         #print("deleted")
 
@@ -411,7 +408,6 @@ def loop(car):
 
         #current vehicle rotation matrix
         Rc = car._current_rotation_r
-        Rn = car._next_rotation_r
 
         #find velocity direction
         velocity_dir = Rc[:,0]  
@@ -477,13 +473,8 @@ if __name__ == '__main__':
                 if role == "hero":
                     actor = temp
 
-        #set gloabl vehicle 
         car = AV(world,actor)
-
-        #exit callback
         signal.signal(signal.SIGINT, exit_handler)
-
-        #main loop
         loop(car)
 
     except rospy.ROSInterruptException:
