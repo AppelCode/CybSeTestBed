@@ -58,6 +58,8 @@ class RoboticHelper():
     #    [-Sbeta       Cbeta*Sgamma                      Cbeta*Cgamm                       z],
     #    [0            0                                 0                                 1]]
     # 
+
+    #TODO: update function
     def to_transform(self,carlaTransform):
         rotation = self.to_rotation(carlaTransform.rotation)
         location = carlaTransform.location
@@ -117,6 +119,7 @@ class RoboticHelper():
 # ==============================================================================
 
 class VehicleVelocityControl():
+    #TODO: add proper intialization for orientation 
     def __init__(self,id):
         self.car_id = id 
         self.original_sigint = signal.getsignal(signal.SIGINT)
@@ -258,7 +261,7 @@ class AV(RoamingAgent):
             Float64, self._test_ros)
 
         # to send ackermann set values to matlab
-        self.carla_path_publisher = rospy.Publisher(
+        self.carla_set_publisher = rospy.Publisher(
             "/carla_plugin/" + self.role_name + "/vehicle_set_values",
             AckermannDrive, queue_size=1)
 
@@ -277,11 +280,27 @@ class AV(RoamingAgent):
         self._current_rotation_c =self._current_transform_c.rotation
         self._current_rotation_r = self.rh.to_rotation(self._current_transform_c.rotation)
 
+    def _update_set_points(self):
+        self._set_speed = self._vehicle.get_speed_limit()
+        #TODO: add logarithm of rotation to define desire angle
+        theta = 0
+        msg = None
+
+        #set steering angle and steering change limit (0 means as fast as possible)
+        msg.steering_angle = theta
+        msg.steering_angle_velocity = 0
+    
+        #set desired speed, acceleration and jerk (0 means as fast as possible)
+        msg.speed = self._set_speed
+        msg.acceleration = 0
+        msg.jerk = 0
+
+        #publish set points
+        self.carla_set_publisher.publish(msg)
+
     #updates current position and
     #updates target waypoints
     def _update_path(self):
-
-        self._update_current_position()
 
         path = []
         pose = PoseStamped()
@@ -310,6 +329,7 @@ class AV(RoamingAgent):
 
             path.append(pose)
 
+    #ROS callback used to test
     def _test_ros(self,mag):
         self.vc.velocity_set_args['magnitude'] = mag.data
 
@@ -344,8 +364,9 @@ class AV(RoamingAgent):
         self.steering_angle = angle 
         
     def run_step(self):
-        self._set_speed = self._vehicle.get_speed_limit()
-        self._update_path()
+        self._update_current_position()        
+        #self._update_path()
+        self._update_set_points()
 
     #def __del__(self):
         #print("deleted")
