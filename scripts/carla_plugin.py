@@ -25,6 +25,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
 from std_msgs.msg import Int16
 from std_msgs.msg import String
+from geometry_msgs.msg import PoseStamped
 
 import carla
 from agents.navigation.agent import Agent, AgentState
@@ -45,79 +46,7 @@ from threading import Lock
 # -- Robotics Stuff ------------------------------------------------------------
 # ==============================================================================
 
-#class used for trajectory generation
-class ScallingFunciton():
-
-    def __init__(self):
-        _a0 = 0
-        _a1 = 0
-        _a2 = 0
-        _a3 = 0
-
-    #solve for scalling based on current dynamics
-    #
-    # param T: length of time of the movement
-    # param v: velocity of the movement
-    # param a: acceleration of the movement
-    #
-    # update function s(t) : s -> [0,1] coeffiecents a0,a1,a2,a4 where params 
-    # are adhered to 
-    #
-    def _update_function(self,T,v,a):
-
-        a0,a1,a2,a3,t = symbols('a0 a1 a2 a3 t')
-        s = a0+a1*t+a2*t**2+a3*t**3     #create expression for s
-        s = lambdify(t,s)  #create python function for s
-
-        #solve for a0 using s(0) = 0
-        sol = solve([Eq(s(0),0)],[a0,a1,a2,a3])
-        try:
-            a0 = sol[a0]
-        except:
-            print('no a0 in solution dict')
-
-        s = a0+a1*t+a2*t**2+a3*t**3     #reevaluate s(t)
-        s = lambdify(s,t)               #create python function
-
-        #solve for a1 using s(T) = 1
-        sol = solve([Eq(s(T),1)],[a1,a2,a3])
-        try:
-            a1 = sol[a1]
-        except:
-            print('no a0 in solution dict')
-
-        s = a0+a1*t+a2*t**2+a3*t**3     #reevaluate s(t)
-        s = lambdify(t,s)               #create python function
-        sd = lambdify(t,diff(s(t),t))   #find difference equation
-
-        #solve for a2 using sd(0)=v
-        sol = solve([Eq(sd(T),v)],[a2,a3])
-        try:
-            a2 = sol[a2]
-        except:
-            print('no a0 in solution dict')
-
-        s = a0+a1*t+a2*t**2+a3*t**3     #reevaluate s(t)
-        s = lambdify(t,s)               #create python function
-        sd = lambdify(t,diff(s(t),t))   #find difference equation
-
-        #solve for a3 using sd(T)=v
-        sol = solve([Eq(sd(T),v)],[a3])
-        try:
-            a3 = sol[a3]
-        except:
-            print('no a0 in solution dict')
-
-        #update coeeficnets
-        self._a0 = a0
-        self._a1 = a1
-        self._a2 = a2
-        self._a3 = a3
-
 class RoboticHelper():
-    
-    def __init__(self):
-        self.sf = ScallingFunciton()
     
     #return numpy representation of transform matrix
     #
@@ -129,8 +58,8 @@ class RoboticHelper():
     #    [-Sbeta       Cbeta*Sgamma                      Cbeta*Cgamm                       z],
     #    [0            0                                 0                                 1]]
     # 
-    def _to_transform(self,carlaTransform):
-        rotation = self._to_rotation(carlaTransform.rotation)
+    def to_transform(self,carlaTransform):
+        rotation = self.to_rotation(carlaTransform.rotation)
         location = carlaTransform.location
 
         x = location.x
@@ -141,7 +70,7 @@ class RoboticHelper():
         
         return transform
     
-    def _to_rotation(self,carlaRotation):
+    def to_rotation(self,carlaRotation):
         roll = math.radians(carlaRotation.roll)
         pitch = math.radians(carlaRotation.pitch)
         yaw = math.radians(carlaRotation.yaw)
@@ -177,11 +106,11 @@ class RoboticHelper():
         #                 [S(a)*C(b), S(a)*S(b)*S(g)+C(a)*C(g), S(a)*S(b)*C(g)-C(a)*S(g)],
         #                 [-S(b), C(b)*S(g), C(b)*C(g)]])
 
-    def _convert_orientation(self,rotation_matrix,array):
+    def convert_orientation(self,rotation_matrix,array):
         return np.matmul(array,rotation_matrix)
 
-    def _update_scalling_function(self,T,v,a):
-        self.sf._update_function(T,v,a)
+    def rot_to_quaternion(self,SO3):
+        return 1, 2
 
 # ==============================================================================
 # -- Vehicle Contorl Process ---------------------------------------------------
@@ -196,7 +125,7 @@ class VehicleVelocityControl():
         self.velocity_set_args['direction_x'] = 0
         self.velocity_set_args['direction_y'] = 0
         self.velocity_set_args['direction_z'] = 0
-        self.velocity_set_args['magnitude'] = 0 
+        self.velocity_set_args['magnitude'] = 0         #only used for testing
         self.velocity_set_args['x_angular_vel'] = 0
         self.velocity_set_args['y_angular_vel'] = 0
         self.velocity_set_args['z_angular_vel'] = 0
@@ -235,15 +164,23 @@ class VehicleVelocityControl():
                 y_dir = self.velocity_set_args['direction_y']
                 z_dir = self.velocity_set_args['direction_z']
 
+                #used for testing ros communication 
+                #TODO: remove magnitude
                 x_dir = magnitude*x_dir
                 y_dir = magnitude*y_dir
                 z_dir = magnitude*z_dir
+
+                x_ang = self.velocity_set_args['x_angular_vel']
+                y_ang = self.velocity_set_args['y_angular_vel']
+                z_ang = self.velocity_set_args['z_angular_vel']
 
             finally:
                 self.mutex.release()
 
                 run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
+                run_ang_velocity = carla.Vector3D(x=x_ang,y=y_ang,z=z_ang)
                 car.set_velocity(run_velocity_dir)
+                carla.set_angular_velocity(run_ang_velocity)
                 time.sleep(0.01)
         
     def _update_vehicle_velocity(self,twist):
@@ -290,18 +227,19 @@ class AV(RoamingAgent):
         #waypoint generator
         self._local_planner = LocalPlanner(self._vehicle)
 
+
         #Path information initialization
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
         self._current_transform_c =self._current_waypoint.transform
-        self._current_transform_r = self.rh._to_transform(self._current_transform_c)
+        self._current_transform_r = self.rh.to_transform(self._current_transform_c)
         self._current_rotation_c =self._current_transform_c.rotation
-        self._current_rotation_r = self.rh._to_rotation(self._current_transform_c.rotation)
+        self._current_rotation_r = self.rh.to_rotation(self._current_transform_c.rotation)
 
         self._next_waypoint = self._current_waypoint.next(1)[0]
         self._next_transform_c = self._next_waypoint.transform
-        self._next_transform_r = self.rh._to_transform(self._next_transform_c)
+        self._next_transform_r = self.rh.to_transform(self._next_transform_c)
         self._next_rotation_c = self._next_transform_c.rotation
-        self._next_rotation_r = self.rh._to_rotation(self._next_rotation_c)
+        self._next_rotation_r = self.rh.to_rotation(self._next_rotation_c)
 
         #Ros definitions
         # matalb model velocity to carla
@@ -331,27 +269,49 @@ class AV(RoamingAgent):
 
         rospy.init_node(self.role_name, anonymous=True)
 
-    def _test_ros(self,mag):
-        self.vc.velocity_set_args['magnitude'] = mag.data
-
     #used to udate current vehicle orientation and location
     def _update_current_position(self):
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
         self._current_transform_c =self._current_waypoint.transform
-        self._current_transform_r = self.rh._to_transform(self._current_transform_c)
+        self._current_transform_r = self.rh.to_transform(self._current_transform_c)
         self._current_rotation_c =self._current_transform_c.rotation
-        self._current_rotation_r = self.rh._to_rotation(self._current_transform_c.rotation)
+        self._current_rotation_r = self.rh.to_rotation(self._current_transform_c.rotation)
 
     #updates current position and
-    #updates target waypoint
+    #updates target waypoints
     def _update_path(self):
 
         self._update_current_position()
-        self._next_waypoint = self._local_planner.run_step()
-        self._next_transform_c = self._next_waypoint.transform
-        self._next_transform_r = self.rh._to_transform(self._next_transform_c)
-        self._next_rotation_c = self._next_transform_c.rotation
-        self._next_rotation_r = self.rh._to_rotation(self._next_rotation_c)
+
+        path = []
+        pose = PoseStamped()
+        for i in range(100):
+            self._next_waypoint = self._current_waypoint.next(0.1)[0]
+            self._next_transform_c = self._next_waypoint.transform
+            self._next_transform_r = self.rh.to_transform(self._next_transform_c)
+
+            pose.pose.position.x = self._current_transform_c.location.x
+            pose.pose.position.y = self._current_transform_c.location.y
+            pose.pose.position.z = self._current_transform_c.location.z
+
+            self._next_rotation_c = self._next_transform_c.rotation
+            self._next_rotation_r = self.rh.to_rotation(self._next_rotation_c)
+
+            q = np.zeros((4,1))
+            theta, omega_hat = self.rh.rot_to_quaternion(self._next_rotation_r)
+
+            q[0,0] = math.cos(theta/2)
+            q[1:4] = omega_hat*math.sin(theta/2)
+
+            pose.pose.orientation.w = q[0,0]
+            pose.pose.orientation.x = q[1,0]
+            pose.pose.orientation.y = q[2,0]
+            pose.pose.orientation.z = q[3,0]
+
+            path.append(pose)
+
+    def _test_ros(self,mag):
+        self.vc.velocity_set_args['magnitude'] = mag.data
 
     #ROS callback used to update linear and angular velocity from matlab
     def _update_vehicle_velocity(self, vehicle_model_velocity):
@@ -360,7 +320,7 @@ class AV(RoamingAgent):
         temp_linear[0] = linear_vel.x.data
         temp_linear[1] = linear_vel.y.data
         temp_linear[2] = linear_vel.z.data
-        temp_linear = self.rh._convert_orientation(self.world_orientation,temp_linear)
+        temp_linear = self.rh.convert_orientation(self.world_orientation,temp_linear)
         self._twist[0:3] = temp_linear
         
 
@@ -369,11 +329,12 @@ class AV(RoamingAgent):
         temp_angular[3] = angular_vel.x.data
         temp_angular[4] = angular_vel.y.data
         temp_angular[5] = angular_vel.z.data
-        temp_angular = self.rh._convert_orientation(self.world_orientation,temp_angular)
+        temp_angular = self.rh.convert_orientation(self.world_orientation,temp_angular)
         self._twist[3:6] = temp_angular
 
         self.vc.mutex.acquire()
         try:
+            self.vc.velocity_set_args['magnitude'] = 1
             self.vc._update_vehicle_velocity(self._twist)
         finally:
             self.vc.mutex.release()
