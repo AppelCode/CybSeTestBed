@@ -183,7 +183,7 @@ class VehicleVelocityControl():
                 run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
                 run_ang_velocity = carla.Vector3D(x=x_ang,y=y_ang,z=z_ang)
                 car.set_velocity(run_velocity_dir)
-                carla.set_angular_velocity(run_ang_velocity)
+                car.set_angular_velocity(run_ang_velocity)
                 time.sleep(0.01)
         
     def _update_vehicle_velocity(self,twist):
@@ -218,7 +218,7 @@ class AV(RoamingAgent):
         self._map = self._world.get_map()
         
         #vehicle specific information
-        self.role_name = "hero"
+        self.role_name = "ego_vehicle"
         self._set_speed = None
 
         #vehicle velocity (updated through ros, from matlab model)
@@ -283,8 +283,8 @@ class AV(RoamingAgent):
     def _update_set_points(self):
         self._set_speed = self._vehicle.get_speed_limit()
         #TODO: add logarithm of rotation to define desire angle
-        theta = 0
-        msg = None
+        theta = 10
+        msg = AckermannDrive()
 
         #set steering angle and steering change limit (0 means as fast as possible)
         msg.steering_angle = theta
@@ -337,18 +337,18 @@ class AV(RoamingAgent):
     def _update_vehicle_velocity(self, vehicle_model_velocity):
         linear_vel = vehicle_model_velocity.linear
         temp_linear = np.array([0,0,0])
-        temp_linear[0] = linear_vel.x.data
-        temp_linear[1] = linear_vel.y.data
-        temp_linear[2] = linear_vel.z.data
+        temp_linear[0] = linear_vel.x
+        temp_linear[1] = linear_vel.y
+        temp_linear[2] = linear_vel.z
         temp_linear = self.rh.convert_orientation(self.world_orientation,temp_linear)
         self._twist[0:3] = temp_linear
         
 
         angular_vel = vehicle_model_velocity.angular
         temp_angular = np.array([0,0,0])
-        temp_angular[3] = angular_vel.x.data
-        temp_angular[4] = angular_vel.y.data
-        temp_angular[5] = angular_vel.z.data
+        temp_angular[0] = angular_vel.x
+        temp_angular[1] = angular_vel.y
+        temp_angular[2] = angular_vel.z
         temp_angular = self.rh.convert_orientation(self.world_orientation,temp_angular)
         self._twist[3:6] = temp_angular
 
@@ -452,7 +452,7 @@ if __name__ == '__main__':
         for temp in actors:
             if temp.attributes.has_key('role_name'):
                 role = temp.attributes['role_name']
-                if role == "hero":
+                if role == "ego_vehicle":
                     actor = temp
 
         car = AV(world,actor)
