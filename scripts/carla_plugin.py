@@ -283,7 +283,7 @@ class AV(RoamingAgent):
     def _update_set_points(self):
         self._set_speed = self._vehicle.get_speed_limit()
         #TODO: add logarithm of rotation to define desire angle
-        theta = 10
+        theta = 0
         msg = AckermannDrive()
 
         #set steering angle and steering change limit (0 means as fast as possible)
@@ -344,8 +344,10 @@ class AV(RoamingAgent):
         temp_linear = self.rh.convert_orientation(self.world_orientation,temp_linear)
         self._twist[0:3] = temp_linear
 
-        #representation of vehicle frame in relation to the world
-        self._twist[0:3] = self.rh.convert_orientation(self._current_rotation_r,self._twist[0:3])
+        #representation of vehicle frame in relation to the world rotated to match cars orientation
+        #v = Rc*Rw*v
+        self._twist[0:3] = self.rh.convert_orientation( \
+            self._current_rotation_r,self.rh.convert_orientation(self.world_orientation,self._twist[0:3]))
         
 
         angular_vel = vehicle_model_velocity.angular
@@ -356,12 +358,16 @@ class AV(RoamingAgent):
         temp_angular = self.rh.convert_orientation(self.world_orientation,temp_angular)
         self._twist[3:6] = temp_angular
 
-        #representation of vehicle frame in relation to the world
-        self._twist[3:6] = self.rh.convert_orientation(self._current_rotation_r,self._twist[3:6])
+        #representation of vehicle frame in relation to the world rotated to match cars orientation
+        #v = Rc*Rw*v
+        self._twist[3:6] = self.rh.convert_orientation( \
+            self._current_rotation_r,self.rh.convert_orientation(self.world_orientation,self._twist[3:6]))
 
         
         self.vc.mutex.acquire()
         try:
+
+            #TODO: remove magnitude after testing is validated
             self.vc.velocity_set_args['magnitude'] = 1
             self.vc._update_vehicle_velocity(self._twist)
         finally:
