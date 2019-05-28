@@ -283,7 +283,7 @@ class AV(RoamingAgent):
     def _update_set_points(self):
         self._set_speed = self._vehicle.get_speed_limit()
         #TODO: add logarithm of rotation to define desire angle
-        theta = 10
+        theta = 0
         msg = AckermannDrive()
 
         #set steering angle and steering change limit (0 means as fast as possible)
