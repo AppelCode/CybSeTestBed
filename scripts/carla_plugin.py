@@ -335,6 +335,7 @@ class AV(RoamingAgent):
 
     #ROS callback used to update linear and angular velocity from matlab
     def _update_vehicle_velocity(self, vehicle_model_velocity):
+        #TODO: adjust orientation
         linear_vel = vehicle_model_velocity.linear
         temp_linear = np.array([0,0,0])
         temp_linear[0] = linear_vel.x
@@ -342,6 +343,11 @@ class AV(RoamingAgent):
         temp_linear[2] = linear_vel.z
         temp_linear = self.rh.convert_orientation(self.world_orientation,temp_linear)
         self._twist[0:3] = temp_linear
+
+        #representation of vehicle frame in relation to the world rotated to match cars orientation
+        #v = Rc*Rw*v
+        self._twist[0:3] = self.rh.convert_orientation( \
+            self._current_rotation_r,self.rh.convert_orientation(self.world_orientation,self._twist[0:3]))
         
 
         angular_vel = vehicle_model_velocity.angular
@@ -352,8 +358,16 @@ class AV(RoamingAgent):
         temp_angular = self.rh.convert_orientation(self.world_orientation,temp_angular)
         self._twist[3:6] = temp_angular
 
+        #representation of vehicle frame in relation to the world rotated to match cars orientation
+        #v = Rc*Rw*v
+        self._twist[3:6] = self.rh.convert_orientation( \
+            self._current_rotation_r,self.rh.convert_orientation(self.world_orientation,self._twist[3:6]))
+
+        
         self.vc.mutex.acquire()
         try:
+
+            #TODO: remove magnitude after testing is validated
             self.vc.velocity_set_args['magnitude'] = 1
             self.vc._update_vehicle_velocity(self._twist)
         finally:
