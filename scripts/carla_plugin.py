@@ -84,23 +84,17 @@ class RoboticHelper():
         if (yaw == 360) or (yaw == -360):
             yaw = 0
 
-        yaw_matrix = np.matrix([
-            [math.cos(yaw), -math.sin(yaw), 0],
+        yaw_matrix = np.array([[math.cos(yaw), -math.sin(yaw), 0],
             [math.sin(yaw), math.cos(yaw), 0],
-            [0, 0, 1]
-        ])
+            [0, 0, 1]])
 
-        pitch_matrix = np.matrix([
-            [math.cos(pitch), 0, math.sin(pitch)],
+        pitch_matrix = np.array([[math.cos(pitch), 0, math.sin(pitch)],
             [0, 1, 0],
-            [-math.sin(pitch), 0, math.cos(pitch)]
-        ])
+            [-math.sin(pitch), 0, math.cos(pitch)]])
 
-        roll_matrix = np.matrix([
-            [1, 0, 0],
+        roll_matrix = np.array([[1, 0, 0],
             [0, math.cos(roll), -math.sin(roll)],
-            [0, math.sin(roll), math.cos(roll)]
-        ])
+            [0, math.sin(roll), math.cos(roll)]])
 
         return np.matmul(yaw_matrix, pitch_matrix, roll_matrix)
 
@@ -109,7 +103,7 @@ class RoboticHelper():
         #                 [-S(b), C(b)*S(g), C(b)*C(g)]])
 
     def convert_orientation(self,rotation_matrix,array):
-        return np.matmul(array,rotation_matrix)
+        return np.matmul(rotation_matrix,array)
 
     def rot_to_quaternion(self,SO3):
         return 1, 2
@@ -173,9 +167,9 @@ class VehicleVelocityControl():
                 y_dir = magnitude*y_dir
                 z_dir = magnitude*z_dir
 
-                x_ang = self.velocity_set_args['x_angular_vel']
-                y_ang = self.velocity_set_args['y_angular_vel']
-                z_ang = self.velocity_set_args['z_angular_vel']
+                x_ang = float(180/math.pi)*self.velocity_set_args['x_angular_vel']
+                y_ang = float(180/math.pi)*self.velocity_set_args['y_angular_vel']
+                z_ang = float(180/math.pi)*self.velocity_set_args['z_angular_vel']
 
             finally:
                 self.mutex.release()
@@ -183,16 +177,18 @@ class VehicleVelocityControl():
                 run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
                 run_ang_velocity = carla.Vector3D(x=x_ang,y=y_ang,z=z_ang)
                 car.set_velocity(run_velocity_dir)
-                car.set_angular_velocity(run_ang_velocity)
-                time.sleep(0.01)
+                #TODO: add angular velocity input
+                #car.set_angular_velocity(run_ang_velocity)
+                time.sleep(0.1)
         
     def _update_vehicle_velocity(self,twist):
-        self.velocity_set_args['direction_x'] = twist[0]
-        self.velocity_set_args['direction_y'] = twist[1]
-        self.velocity_set_args['direction_z'] = twist[2]
-        self.velocity_set_args['x_angular_vel'] = twist[3]
-        self.velocity_set_args['y_angular_vel'] = twist[4]
-        self.velocity_set_args['z_angular_vel'] = twist[5]
+
+        self.velocity_set_args['direction_x'] = np.asscalar(twist[0])
+        self.velocity_set_args['direction_y'] = np.asscalar(twist[1])
+        self.velocity_set_args['direction_z'] = np.asscalar(twist[2])
+        self.velocity_set_args['x_angular_vel'] = np.asscalar(twist[3])
+        self.velocity_set_args['y_angular_vel'] = np.asscalar(twist[4])
+        self.velocity_set_args['z_angular_vel'] = np.asscalar(twist[5])
         
 # ==============================================================================
 # -- Autonomous Vehicle --------------------------------------------------------
@@ -207,8 +203,8 @@ class AV(RoamingAgent):
 
     # World orientation is left hand cooridinate 
     world_orientation = np.array([[1, 0, 0],
-                                  [0, 0, 1],
-                                  [0, 1, 0]])
+                                  [0, 1, 0],
+                                  [0, 0, -1]])
     
     def __init__(self,world,vehicle_local):
         #super(AV,self).__init__(vehicle_local)
@@ -222,13 +218,14 @@ class AV(RoamingAgent):
         self._set_speed = None
 
         #vehicle velocity (updated through ros, from matlab model)
-        self._twist = np.array([0,0,0,0,0,0])
+        self._twist = np.zeros((6,1))
         
         #vehicle control process class
         self.vc = VehicleVelocityControl(self._vehicle.id)
 
         #waypoint generator
         self._local_planner = LocalPlanner(self._vehicle)
+        self._theta = 0
 
 
         #Path information initialization
@@ -275,32 +272,68 @@ class AV(RoamingAgent):
     #used to udate current vehicle orientation and location
     def _update_current_position(self):
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
-        self._current_transform_c =self._current_waypoint.transform
+        self._current_transform_c =self._vehicle.get_transform()
         self._current_transform_r = self.rh.to_transform(self._current_transform_c)
         self._current_rotation_c =self._current_transform_c.rotation
         self._current_rotation_r = self.rh.to_rotation(self._current_transform_c.rotation)
 
     def _update_set_points(self):
+
+        #update speed limit
         self._set_speed = self._vehicle.get_speed_limit()
-        #TODO: add logarithm of rotation to define desire angle
-        theta = 0
         msg = AckermannDrive()
 
         #set steering angle and steering change limit (0 means as fast as possible)
-        msg.steering_angle = theta
+        msg.steering_angle = self._theta
         msg.steering_angle_velocity = 0
     
         #set desired speed, acceleration and jerk (0 means as fast as possible)
-        msg.speed = self._set_speed
+        msg.speed = 7#float(1/3.6)*self._set_speed
         msg.acceleration = 0
         msg.jerk = 0
 
         #publish set points
         self.carla_set_publisher.publish(msg)
 
+    def _update_path_angle(self):
+
+        self._next_waypoint = self._current_waypoint.next(1)[0]
+        self._next_transform_c = self._next_waypoint.transform
+        self._next_transform_r = self.rh.to_transform(self._next_transform_c)
+        self._next_rotation_c = self._next_transform_c.rotation
+        self._next_rotation_r = self.rh.to_rotation(self._next_rotation_c)
+
+        #TODO: go from rotation notation to roll pitch yaw
+        #TODO: push this calculation to robotic helper
+        R = np.matmul(self._next_rotation_r,np.transpose(self._current_rotation_r))
+        trace = np.trace(R)
+        omega_skew = np.zeros((3,3))
+
+        if np.array_equal(R,np.eye(3,3)):
+            self._theta = 0
+
+        elif trace == -1:
+            self._theta = math.pi
+            if R[2,2] != -1:
+                omega_skew = 1/math.sqrt(2(1+R[2,2]))*np.transpose(np.array(R[0,2], R[1,2],1+R[2,2]))
+            elif R[1,1] != -1:
+                omega_skew = 1/math.sqrt(2(1+R[1,1]))*np.transpose(np.array(R[0,1], 1+ R[1,1],R[2,1]))
+            elif R[0,0] != -1:
+                omega_skew = 1/math.sqrt(2(1+R[0,0]))*np.transpose(np.array(1+R[0,0], R[1,0],R[2,0]))
+
+        else:
+            self._theta = math.acos((0.5)*(trace-1))
+            if self._theta > 0:
+                omega_skew = (1/(2*math.sin(self._theta))*np.subtract(R,np.transpose(R))) 
+
+        omg = mr.so3ToVec(omega_skew)       
+
+        if omg[2] > 0:
+            self._theta = -self._theta
+
     #updates current position and
     #updates target waypoints
-    def _update_path(self):
+    def _update_path_waypoints(self):
 
         path = []
         pose = PoseStamped()
@@ -337,11 +370,10 @@ class AV(RoamingAgent):
     def _update_vehicle_velocity(self, vehicle_model_velocity):
         #TODO: adjust orientation
         linear_vel = vehicle_model_velocity.linear
-        temp_linear = np.array([0,0,0])
-        temp_linear[0] = linear_vel.x
-        temp_linear[1] = linear_vel.y
-        temp_linear[2] = linear_vel.z
-        temp_linear = self.rh.convert_orientation(self.world_orientation,temp_linear)
+        temp_linear = np.zeros((3,1))
+        temp_linear[0,0] = linear_vel.x
+        temp_linear[1,0] = linear_vel.y
+        temp_linear[2,0] = linear_vel.z
         self._twist[0:3] = temp_linear
 
         #representation of vehicle frame in relation to the world rotated to match cars orientation
@@ -351,19 +383,18 @@ class AV(RoamingAgent):
         
 
         angular_vel = vehicle_model_velocity.angular
-        temp_angular = np.array([0,0,0])
-        temp_angular[0] = angular_vel.x
-        temp_angular[1] = angular_vel.y
-        temp_angular[2] = angular_vel.z
-        temp_angular = self.rh.convert_orientation(self.world_orientation,temp_angular)
+        temp_angular = np.zeros((3,1))
+        temp_angular[0,0] = angular_vel.x
+        temp_angular[1,0] = angular_vel.y
+        temp_angular[2,0] = angular_vel.z
         self._twist[3:6] = temp_angular
 
+        #TODO: change back
         #representation of vehicle frame in relation to the world rotated to match cars orientation
         #v = Rc*Rw*v
         self._twist[3:6] = self.rh.convert_orientation( \
             self._current_rotation_r,self.rh.convert_orientation(self.world_orientation,self._twist[3:6]))
 
-        
         self.vc.mutex.acquire()
         try:
 
@@ -379,7 +410,7 @@ class AV(RoamingAgent):
         
     def run_step(self):
         self._update_current_position()        
-        #self._update_path()
+        self._update_path_angle()
         self._update_set_points()
 
     #def __del__(self):
@@ -396,31 +427,37 @@ def loop(car):
 
         #path planning updates, map based AV 
         car.run_step()
-        max_speed = car._set_speed
-        print("current location: (%s, %s, %s)"%(car._current_transform_c.location.x, \
-            car._current_transform_c.location.y,car._current_transform_c.location.z))
-        print("next location   : (%s, %s, %s)"%(car._next_transform_c.location.x, \
-            car._next_transform_c.location.y,car._next_transform_c.location.z))
+        print(car._vehicle.get_acceleration())
+        
+        #max_speed = car._set_speed
+        #print("current location: (%s, %s, %s)"%(car._current_transform_c.location.x, \
+        #    car._current_transform_c.location.y,car._current_transform_c.location.z))
+        #print("next location   : (%s, %s, %s)"%(car._next_transform_c.location.x, \
+        #    car._next_transform_c.location.y,car._next_transform_c.location.z))
 
         #current vehicle rotation matrix
-        Rc = car._current_rotation_r
+        #Rc = car._current_rotation_r
 
         #find velocity direction
-        velocity_dir = Rc[:,0]  
-        velocity_dir = velocity_dir.reshape(1,3)     
-        velocity_dir = np.transpose(velocity_dir)
+        #velocity_dir = Rc[:,0]  
+        #velocity_dir = velocity_dir.reshape(1,3)     
+        #velocity_dir = np.transpose(velocity_dir)
+
+        temp  = np.array([0,0,1])
+        temp = car.rh.convert_orientation( \
+            car._current_rotation_r,car.rh.convert_orientation(car.world_orientation,temp.transpose()))
 
         #update velocity direction and magnitude 
         #to be handled by vehicle_control Process
-        car.vc.velocity_set_args['direction_x'] = velocity_dir[0,0]
-        car.vc.velocity_set_args['direction_y'] = velocity_dir[1,0]
-        car.vc.velocity_set_args['direction_z'] = velocity_dir[2,0]
+        #car.vc.velocity_set_args['direction_x'] = velocity_dir[0,0]
+        #car.vc.velocity_set_args['direction_y'] = velocity_dir[1,0]
+        #car.vc.velocity_set_args['direction_z'] = velocity_dir[2,0]
 
-        car.vc.velocity_set_args['x_angular_vel'] = 0
-        car.vc.velocity_set_args['y_angular_vel'] = 0
-        car.vc.velocity_set_args['z_angular_vel'] = 0
+        #car.vc.velocity_set_args['x_angular_vel'] = temp[0]
+        #car.vc.velocity_set_args['y_angular_vel'] = temp[1]
+        #car.vc.velocity_set_args['z_angular_vel'] = temp[2]
 
-        car.vc.velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
+        #car.vc.velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
 
         #path planning algorithm and scalling function
         #solve for coefficents
@@ -428,6 +465,7 @@ def loop(car):
 
         #definiton of path using scaling funciton: X(s) = Tcexp(log(Tc^(-1)Tn)s)
         #run the path
+        time.sleep(0.01)
 
 def exit_handler(signum, frame):
     print('\ncleaning up and closing carla plugin')
