@@ -186,7 +186,7 @@ class LocalPlanner(object):
         self._target_road_option = RoadOption.LANEFOLLOW
         self._global_plan = True
 
-    def run_step(self, debug=True):
+    def run_step(self, debug=False):
         """
         Execute one step of local planning which involves running the longitudinal and lateral PID controllers to
         follow the waypoints trajectory.
@@ -224,7 +224,7 @@ class LocalPlanner(object):
         self.target_waypoint, self._target_road_option = self._waypoint_buffer[0]
         # move using PID controllers
         #control is currently turned off
-        #control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
+        control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         # purge the queue of obsolete waypoints
         vehicle_transform = self._vehicle.get_transform()
@@ -241,7 +241,7 @@ class LocalPlanner(object):
         if debug:
             draw_waypoints(self._vehicle.get_world(), [self.target_waypoint], self._vehicle.get_location().z + 1.0)
 
-        return self.target_waypoint
+        return control
 
 
 def _retrieve_options(list_waypoints, current_waypoint):

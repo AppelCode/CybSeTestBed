@@ -105,6 +105,7 @@ class RoboticHelper():
     def convert_orientation(self,rotation_matrix,array):
         return np.matmul(rotation_matrix,array)
 
+    #TODO: implement function
     def rot_to_quaternion(self,SO3):
         return 1, 2
 
@@ -162,7 +163,7 @@ class VehicleVelocityControl():
                 z_dir = self.velocity_set_args['direction_z']
 
                 #used for testing ros communication 
-                #TODO: remove magnitude
+                #TODO: remove magnitude used in testing
                 x_dir = magnitude*x_dir
                 y_dir = magnitude*y_dir
                 z_dir = magnitude*z_dir
@@ -177,7 +178,7 @@ class VehicleVelocityControl():
                 run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
                 run_ang_velocity = carla.Vector3D(x=x_ang,y=y_ang,z=z_ang)
                 car.set_velocity(run_velocity_dir)
-                #TODO: add angular velocity input
+                #TODO: add angular velocity input when lat control is finished
                 #car.set_angular_velocity(run_ang_velocity)
                 time.sleep(0.1)
         
@@ -221,7 +222,7 @@ class AV(RoamingAgent):
         self._twist = np.zeros((6,1))
         
         #vehicle control process class
-        self.vc = VehicleVelocityControl(self._vehicle.id)
+        #self.vc = VehicleVelocityControl(self._vehicle.id)
 
         #waypoint generator
         self._local_planner = LocalPlanner(self._vehicle)
@@ -270,6 +271,7 @@ class AV(RoamingAgent):
         rospy.init_node(self.role_name, anonymous=True)
 
     #used to udate current vehicle orientation and location
+    #vehicle orientaion is based on vehicle not watpoint
     def _update_current_position(self):
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
         self._current_transform_c =self._vehicle.get_transform()
@@ -277,6 +279,7 @@ class AV(RoamingAgent):
         self._current_rotation_c =self._current_transform_c.rotation
         self._current_rotation_r = self.rh.to_rotation(self._current_transform_c.rotation)
 
+    #use ackermann drive message to update set points
     def _update_set_points(self):
 
         #update speed limit
@@ -295,6 +298,7 @@ class AV(RoamingAgent):
         #publish set points
         self.carla_set_publisher.publish(msg)
 
+    #desired angle to next point
     def _update_path_angle(self):
 
         self._next_waypoint = self._current_waypoint.next(1)[0]
@@ -305,6 +309,7 @@ class AV(RoamingAgent):
 
         #TODO: go from rotation notation to roll pitch yaw
         #TODO: push this calculation to robotic helper
+        #logrithm of rotation
         R = np.matmul(self._next_rotation_r,np.transpose(self._current_rotation_r))
         trace = np.trace(R)
         omega_skew = np.zeros((3,3))
@@ -333,6 +338,7 @@ class AV(RoamingAgent):
 
     #updates current position and
     #updates target waypoints
+    #TODO: finish implementation
     def _update_path_waypoints(self):
 
         path = []
@@ -389,9 +395,8 @@ class AV(RoamingAgent):
         temp_angular[2,0] = angular_vel.z
         self._twist[3:6] = temp_angular
 
-        #TODO: change back
         #representation of vehicle frame in relation to the world rotated to match cars orientation
-        #v = Rc*Rw*v
+        #vc = Rc*Rw*vm
         self._twist[3:6] = self.rh.convert_orientation( \
             self._current_rotation_r,self.rh.convert_orientation(self.world_orientation,self._twist[3:6]))
 
@@ -409,9 +414,11 @@ class AV(RoamingAgent):
         self.steering_angle = angle 
         
     def run_step(self):
-        self._update_current_position()        
-        self._update_path_angle()
-        self._update_set_points()
+        #self._update_current_position()        
+        #self._update_path_angle()
+        #self._update_set_points()
+        control = self._local_planner.run_step()
+        self._vehicle.apply_control(control)
 
     #def __del__(self):
         #print("deleted")
@@ -427,7 +434,6 @@ def loop(car):
 
         #path planning updates, map based AV 
         car.run_step()
-        print(car._vehicle.get_acceleration())
         
         #max_speed = car._set_speed
         #print("current location: (%s, %s, %s)"%(car._current_transform_c.location.x, \
@@ -442,10 +448,6 @@ def loop(car):
         #velocity_dir = Rc[:,0]  
         #velocity_dir = velocity_dir.reshape(1,3)     
         #velocity_dir = np.transpose(velocity_dir)
-
-        temp  = np.array([0,0,1])
-        temp = car.rh.convert_orientation( \
-            car._current_rotation_r,car.rh.convert_orientation(car.world_orientation,temp.transpose()))
 
         #update velocity direction and magnitude 
         #to be handled by vehicle_control Process
@@ -465,7 +467,7 @@ def loop(car):
 
         #definiton of path using scaling funciton: X(s) = Tcexp(log(Tc^(-1)Tn)s)
         #run the path
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 def exit_handler(signum, frame):
     print('\ncleaning up and closing carla plugin')
