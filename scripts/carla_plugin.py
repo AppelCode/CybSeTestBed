@@ -26,6 +26,8 @@ from std_msgs.msg import Float64
 from std_msgs.msg import Int16
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
+from nav_msgs.msg import Path
 
 import carla
 from agents.navigation.agent import Agent, AgentState
@@ -107,7 +109,42 @@ class RoboticHelper():
 
     #TODO: implement function
     def rot_to_quaternion(self,SO3):
-        return 1, 2
+        omg, theta = self.log_rot(SO3)
+
+        q = np.zeros((4,1))
+        q[0,0] = math.cos(theta/2)
+        q[1:4] = omg*math.sin(theta/2)
+
+        return q
+
+    # Logrithm of Rotation Calculation
+    def log_rot(self,R):
+        trace = np.trace(R)
+        omega_skew = np.zeros((3,3))
+
+        if np.array_equal(R,np.eye(3,3)):
+            theta = 0
+
+        elif trace == -1:
+            theta = math.pi
+            if R[2,2] != -1:
+                omega_skew = 1/math.sqrt(2*(1+R[2,2]))*np.transpose(np.array(R[0,2], R[1,2],1+R[2,2]))
+            elif R[1,1] != -1:
+                omega_skew = 1/math.sqrt(2*(1+R[1,1]))*np.transpose(np.array(R[0,1], 1+ R[1,1],R[2,1]))
+            elif R[0,0] != -1:
+                omega_skew = 1/math.sqrt(2*(1+R[0,0]))*np.transpose(np.array(1+R[0,0], R[1,0],R[2,0]))
+
+        else:
+            theta = math.acos((0.5)*(trace-1))
+            if theta > 0:
+                omega_skew = (1/(2*math.sin(theta))*np.subtract(R,np.transpose(R))) 
+
+        omg = mr.so3ToVec(omega_skew)       
+
+        if omg[2] > 0:
+            theta = -theta
+
+        return omg, theta
 
 # ==============================================================================
 # -- Vehicle Contorl Process ---------------------------------------------------
@@ -222,12 +259,10 @@ class AV(RoamingAgent):
         self._twist = np.zeros((6,1))
         
         #vehicle control process class
-        #self.vc = VehicleVelocityControl(self._vehicle.id)
+        self.vc = VehicleVelocityControl(self._vehicle.id)
 
         #waypoint generator
         self._local_planner = LocalPlanner(self._vehicle)
-        self._theta = 0
-
 
         #Path information initialization
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
@@ -235,12 +270,6 @@ class AV(RoamingAgent):
         self._current_transform_r = self.rh.to_transform(self._current_transform_c)
         self._current_rotation_c =self._current_transform_c.rotation
         self._current_rotation_r = self.rh.to_rotation(self._current_transform_c.rotation)
-
-        self._next_waypoint = self._current_waypoint.next(1)[0]
-        self._next_transform_c = self._next_waypoint.transform
-        self._next_transform_r = self.rh.to_transform(self._next_transform_c)
-        self._next_rotation_c = self._next_transform_c.rotation
-        self._next_rotation_r = self.rh.to_rotation(self._next_rotation_c)
 
         #Ros definitions
         # matalb model velocity to carla
@@ -287,7 +316,7 @@ class AV(RoamingAgent):
         msg = AckermannDrive()
 
         #set steering angle and steering change limit (0 means as fast as possible)
-        msg.steering_angle = self._theta
+        msg.steering_angle = 0
         msg.steering_angle_velocity = 0
     
         #set desired speed, acceleration and jerk (0 means as fast as possible)
@@ -301,74 +330,62 @@ class AV(RoamingAgent):
     #desired angle to next point
     def _update_path_angle(self):
 
-        self._next_waypoint = self._current_waypoint.next(1)[0]
-        self._next_transform_c = self._next_waypoint.transform
-        self._next_transform_r = self.rh.to_transform(self._next_transform_c)
-        self._next_rotation_c = self._next_transform_c.rotation
-        self._next_rotation_r = self.rh.to_rotation(self._next_rotation_c)
+        next_waypoint = self._current_waypoint.next(1)[0]
+        next_transform_c = next_waypoint.transform
+        next_transform_r = self.rh.to_transform(next_transform_c)
+        next_rotation_c = next_transform_c.rotation
+        next_rotation_r = self.rh.to_rotation(next_rotation_c)
 
         #TODO: go from rotation notation to roll pitch yaw
-        #TODO: push this calculation to robotic helper
-        #logrithm of rotation
-        R = np.matmul(self._next_rotation_r,np.transpose(self._current_rotation_r))
-        trace = np.trace(R)
-        omega_skew = np.zeros((3,3))
 
-        if np.array_equal(R,np.eye(3,3)):
-            self._theta = 0
-
-        elif trace == -1:
-            self._theta = math.pi
-            if R[2,2] != -1:
-                omega_skew = 1/math.sqrt(2(1+R[2,2]))*np.transpose(np.array(R[0,2], R[1,2],1+R[2,2]))
-            elif R[1,1] != -1:
-                omega_skew = 1/math.sqrt(2(1+R[1,1]))*np.transpose(np.array(R[0,1], 1+ R[1,1],R[2,1]))
-            elif R[0,0] != -1:
-                omega_skew = 1/math.sqrt(2(1+R[0,0]))*np.transpose(np.array(1+R[0,0], R[1,0],R[2,0]))
-
-        else:
-            self._theta = math.acos((0.5)*(trace-1))
-            if self._theta > 0:
-                omega_skew = (1/(2*math.sin(self._theta))*np.subtract(R,np.transpose(R))) 
-
-        omg = mr.so3ToVec(omega_skew)       
-
-        if omg[2] > 0:
-            self._theta = -self._theta
+        R = np.matmul(next_rotation_r,np.transpose(self._current_rotation_r))
+        omg, theta = self.rh.log_rot(R)
 
     #updates current position and
     #updates target waypoints
-    #TODO: finish implementation
+    #TODO: finish implementation use local planner
     def _update_path_waypoints(self):
 
+        #create current waypoint pose
+        posecurrent = Pose()
+        q = self.rh.rot_to_quaternion(self._current_rotation_r)
+
+        posecurrent.position.x = self._current_transform_c.location.x
+        posecurrent.position.y = self._current_transform_c.location.y
+        posecurrent.position.z = self._current_transform_c.location.z
+        posecurrent.orientation.w = q[0,0]
+        posecurrent.orientation.x = q[1,0]
+        posecurrent.orientation.y = q[2,0]
+        posecurrent.orientation.z = q[3,0]
+
+        #create targetwaypoint pose
+        _,target_waypoint = self._local_planner.run_step()
+
         path = []
-        pose = PoseStamped()
-        for i in range(100):
-            self._next_waypoint = self._current_waypoint.next(0.1)[0]
-            self._next_transform_c = self._next_waypoint.transform
-            self._next_transform_r = self.rh.to_transform(self._next_transform_c)
+        posetarget = PoseStamped()
 
-            pose.pose.position.x = self._current_transform_c.location.x
-            pose.pose.position.y = self._current_transform_c.location.y
-            pose.pose.position.z = self._current_transform_c.location.z
+        target_location = target_waypoint.location
+        target_rotation_r = self.rh.to_rotation(target_waypoint.transform.rotation)
+        q = self.rh.rot_to_quaternion(target_rotation_r)
+        
+        posetarget.pose.position.x = target_location.x
+        posetarget.pose.position.y = target_location.y
+        posetarget.pose.position.z = target_location.z
+        posetarget.pose.orientation.w = q[0,0]
+        posetarget.pose.orientation.x = q[1,0]
+        posetarget.pose.orientation.y = q[2,0]
+        posetarget.pose.orientation.z = q[3,0]
 
-            self._next_rotation_c = self._next_transform_c.rotation
-            self._next_rotation_r = self.rh.to_rotation(self._next_rotation_c)
+        path.append(posetarget)
 
-            q = np.zeros((4,1))
-            theta, omega_hat = self.rh.rot_to_quaternion(self._next_rotation_r)
+        #ROS send path
+        msg = PathPlanner()
+        msg.current = posecurrent
+        msg.target = path
 
-            q[0,0] = math.cos(theta/2)
-            q[1:4] = omega_hat*math.sin(theta/2)
+        self.carla_path_publisher.pub(msg)
 
-            pose.pose.orientation.w = q[0,0]
-            pose.pose.orientation.x = q[1,0]
-            pose.pose.orientation.y = q[2,0]
-            pose.pose.orientation.z = q[3,0]
-
-            path.append(pose)
-
-    #ROS callback used to test
+    #ROS callback used to testpose
     def _test_ros(self,mag):
         self.vc.velocity_set_args['magnitude'] = mag.data
 
@@ -414,11 +431,9 @@ class AV(RoamingAgent):
         self.steering_angle = angle 
         
     def run_step(self):
-        #self._update_current_position()        
+        self._update_current_position()        
         #self._update_path_angle()
-        #self._update_set_points()
-        control = self._local_planner.run_step()
-        self._vehicle.apply_control(control)
+        self._update_set_points()
 
     #def __del__(self):
         #print("deleted")
