@@ -383,7 +383,7 @@ class AV(RoamingAgent):
         msg.current = posecurrent
         msg.target = path
 
-        self.carla_path_publisher.pub(msg)
+        self.carla_path_publisher.publish(msg)
 
     #ROS callback used to testpose
     def _test_ros(self,mag):
