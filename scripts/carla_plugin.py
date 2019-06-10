@@ -50,7 +50,7 @@ from threading import Lock
 
 class RoboticHelper():
     
-    #return numpy representation of transform matrix
+    #return numpy representation of SE3 transform matrix
     #
     # param carlaTransform: carla object representing a transformation
     # return: numpy transform matrix (as defined in reference[1] modern_robotics import textbook)
@@ -74,6 +74,15 @@ class RoboticHelper():
         
         return transform
     
+    #return numpy representation of SO3 rotation matrix
+    #
+    # param carlaTransform: carla object representing a transformation
+    # return: numpy transform matrix (as defined in reference[1] modern_robotics import textbook)
+    #
+    #   [[Calpha*Cbeta Calpha*Sbeta*Sgamma-Salpha*Cgamma Calpha*Sbeta*Cgamma+SalphaS*gamma],
+    #    [Salpha*Cbeta Salpha*Sbeta*Sgamma+Calpha*Cgamma Salpha*Sbeta*Cgamma-Calpha*Sgamma],
+    #    [-Sbeta       Cbeta*Sgamma                      Cbeta*Cgamm                      ]]
+    # 
     def to_rotation(self,carlaRotation):
         roll = math.radians(carlaRotation.roll)
         pitch = math.radians(carlaRotation.pitch)
@@ -100,17 +109,19 @@ class RoboticHelper():
 
         return np.matmul(yaw_matrix, pitch_matrix, roll_matrix)
 
-        #return np.array([[C(a)*C(b), C(a)*S(b)*S(g)-S(a)*C(g), C(a)*S(b)*C(g)+S(a)*S(g)],
-        #                 [S(a)*C(b), S(a)*S(b)*S(g)+C(a)*C(g), S(a)*S(b)*C(g)-C(a)*S(g)],
-        #                 [-S(b), C(b)*S(g), C(b)*C(g)]])
-
+    #adjust frame of refrence
+    #
+    # param rotation_matrix: SO3 representaion of another frame of refeennce 
+    # param array: current frame of reference frame
+    #
+    # return: roation_matrix*array -> the representation of array in new frame
+    #
     def convert_orientation(self,rotation_matrix,array):
         return np.matmul(rotation_matrix,array)
 
-    #TODO: implement function
+    # SO3 to unit quanternion
     def rot_to_quaternion(self,SO3):
         omg, theta = self.log_rot(SO3)
-
         q = np.zeros((4,1))
         q[0,0] = math.cos(theta/2)
         q[1:4] = omg*math.sin(theta/2)
@@ -166,7 +177,7 @@ class VehicleVelocityControl():
         self.velocity_set_args['z_angular_vel'] = 0
         self.mutex = Lock()
 
-        #start parallel process
+        #start parallel process for vehicle velocity control
         numjobs = 1 
         jobs = []
         for i in range(numjobs):
@@ -205,9 +216,9 @@ class VehicleVelocityControl():
                 y_dir = magnitude*y_dir
                 z_dir = magnitude*z_dir
 
-                x_ang = float(180/math.pi)*self.velocity_set_args['x_angular_vel']
-                y_ang = float(180/math.pi)*self.velocity_set_args['y_angular_vel']
-                z_ang = float(180/math.pi)*self.velocity_set_args['z_angular_vel']
+                x_ang = self.velocity_set_args['x_angular_vel']
+                y_ang = self.velocity_set_args['y_angular_vel']
+                z_ang = self.velocity_set_args['z_angular_vel']
 
             finally:
                 self.mutex.release()
@@ -215,6 +226,7 @@ class VehicleVelocityControl():
                 run_velocity_dir = carla.Vector3D(x=x_dir,y=y_dir,z=z_dir)
                 run_ang_velocity = carla.Vector3D(x=x_ang,y=y_ang,z=z_ang)
                 car.set_velocity(run_velocity_dir)
+
                 #TODO: add angular velocity input when lat control is finished
                 #car.set_angular_velocity(run_ang_velocity)
                 time.sleep(0.1)
@@ -244,7 +256,7 @@ class AV(RoamingAgent):
                                   [0, 1, 0],
                                   [0, 0, -1]])
     
-    def __init__(self,world,vehicle_local):
+    def __init__(self,world,vehicle_local,dynamics_test=False):
         #super(AV,self).__init__(vehicle_local)
         #vehicle enviroenment setup information
         self._vehicle = vehicle_local
@@ -299,6 +311,15 @@ class AV(RoamingAgent):
 
         rospy.init_node(self.role_name, anonymous=True)
 
+        #TODO: import matlab test from driving scenerio
+        #if dynamics_test:
+            #self._matlab_dynamics_test()
+
+
+    #=============================================================================
+    # Run step functions
+    #=============================================================================
+
     #used to udate current vehicle orientation and location
     #vehicle orientaion is based on vehicle not watpoint
     def _update_current_position(self):
@@ -320,6 +341,7 @@ class AV(RoamingAgent):
         msg.steering_angle_velocity = 0
     
         #set desired speed, acceleration and jerk (0 means as fast as possible)
+        #TODO: adjust back to speed limit
         msg.speed = 7#float(1/3.6)*self._set_speed
         msg.acceleration = 0
         msg.jerk = 0
@@ -385,10 +407,9 @@ class AV(RoamingAgent):
 
         self.carla_path_publisher.publish(msg)
 
-    #ROS callback used to testpose
-    def _test_ros(self,mag):
-        self.vc.velocity_set_args['magnitude'] = mag.data
-
+    #=============================================================================
+    # ROS calbacks
+    #=============================================================================
     #ROS callback used to update linear and angular velocity from matlab
     def _update_vehicle_velocity(self, vehicle_model_velocity):
         #TODO: adjust orientation
@@ -429,11 +450,20 @@ class AV(RoamingAgent):
     #ROS callback used to update steering angle
     def _update_vehicle_steering(self,angle):
         self.steering_angle = angle 
-        
+
+    #ROS callback used to testpose
+    def _test_ros(self,mag):
+        self.vc.velocity_set_args['magnitude'] = mag.data
+
+    
+    #=============================================================================
+    # Step execution
+    #=============================================================================
+ 
     def run_step(self):
         self._update_current_position()        
-        #self._update_path_angle()
         self._update_set_points()
+        #self._update_path_waypoints()
 
     #def __del__(self):
         #print("deleted")
@@ -445,10 +475,31 @@ def loop(car):
 
     car._vehicle.set_simulate_physics(True)
 
+    #matlab vehicle scenerio test intial conditions
+    #works on Town01
+    transform = carla.Transform()
+    transform.location.x = 285.75
+    transform.location.y = -57.4002
+    transform.location.z = 0
+    transform.rotation.pitch = 0
+    transform.rotataion.yaw = -0.1848
+    transform.rotation.roll = 0
+
+    car._vehicle.set_transform(transform)
+
     while True:
 
         #path planning updates, map based AV 
-        car.run_step()
+        car.run_step()   
+        time.sleep(0.1)
+
+def exit_handler(signum, frame):
+    print('\ncleaning up and closing carla plugin')
+    sys.exit(1)
+
+def test_velocity_process(car):
+        #path planning updates, map based AV 
+        car.run_step()   
         
         #max_speed = car._set_speed
         #print("current location: (%s, %s, %s)"%(car._current_transform_c.location.x, \
@@ -457,24 +508,24 @@ def loop(car):
         #    car._next_transform_c.location.y,car._next_transform_c.location.z))
 
         #current vehicle rotation matrix
-        #Rc = car._current_rotation_r
+        Rc = car._current_rotation_r
 
         #find velocity direction
-        #velocity_dir = Rc[:,0]  
-        #velocity_dir = velocity_dir.reshape(1,3)     
-        #velocity_dir = np.transpose(velocity_dir)
+        velocity_dir = Rc[:,0]  
+        velocity_dir = velocity_dir.reshape(1,3)     
+        velocity_dir = np.transpose(velocity_dir)
 
         #update velocity direction and magnitude 
         #to be handled by vehicle_control Process
-        #car.vc.velocity_set_args['direction_x'] = velocity_dir[0,0]
-        #car.vc.velocity_set_args['direction_y'] = velocity_dir[1,0]
-        #car.vc.velocity_set_args['direction_z'] = velocity_dir[2,0]
+        car.vc.velocity_set_args['direction_x'] = velocity_dir[0,0]
+        car.vc.velocity_set_args['direction_y'] = velocity_dir[1,0]
+        car.vc.velocity_set_args['direction_z'] = velocity_dir[2,0]
 
-        #car.vc.velocity_set_args['x_angular_vel'] = temp[0]
-        #car.vc.velocity_set_args['y_angular_vel'] = temp[1]
-        #car.vc.velocity_set_args['z_angular_vel'] = temp[2]
+        car.vc.velocity_set_args['x_angular_vel'] = temp[0]
+        car.vc.velocity_set_args['y_angular_vel'] = temp[1]
+        car.vc.velocity_set_args['z_angular_vel'] = temp[2]
 
-        #car.vc.velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
+        car.vc.velocity_set_args['magnitude'] = input("Enter new Speed [km/hr]: ") 
 
         #path planning algorithm and scalling function
         #solve for coefficents
@@ -483,10 +534,6 @@ def loop(car):
         #definiton of path using scaling funciton: X(s) = Tcexp(log(Tc^(-1)Tn)s)
         #run the path
         time.sleep(0.1)
-
-def exit_handler(signum, frame):
-    print('\ncleaning up and closing carla plugin')
-    sys.exit(1)
 
 if __name__ == '__main__':
     #create argument parser
