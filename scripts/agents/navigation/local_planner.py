@@ -223,7 +223,6 @@ class LocalPlanner(object):
         # target waypoint
         self.target_waypoint, self._target_road_option = self._waypoint_buffer[0]
         # move using PID controllers
-        #control is currently turned off
         control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         # purge the queue of obsolete waypoints
