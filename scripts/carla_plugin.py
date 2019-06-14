@@ -414,11 +414,11 @@ class AV(RoamingAgent):
         self.steering_angle = angle 
         
     def run_step(self):
-        #self._update_current_position()        
-        #self._update_path_angle()
-        #self._update_set_points()
-        control = self._local_planner.run_step()
-        self._vehicle.apply_control(control)
+        self._update_current_position()        
+        self._update_path_angle()
+        self._update_set_points()
+        #control = self._local_planner.run_step()
+        #self._vehicle.apply_control(control)
 
     #def __del__(self):
         #print("deleted")
