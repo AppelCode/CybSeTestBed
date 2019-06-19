@@ -28,6 +28,7 @@ from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Pose
 from nav_msgs.msg import Path
+from std_msgs.msg import Header
 
 import carla
 from agents.navigation.agent import Agent, AgentState
@@ -43,6 +44,10 @@ import argparse
 from sympy import *
 import multiprocessing
 from threading import Lock
+
+######## TESTING ########
+way_points = np.loadtxt('refPoses.dat')
+way_points = np.asarray(way_points)
 
 # ==============================================================================
 # -- Robotics Stuff ------------------------------------------------------------
@@ -150,7 +155,9 @@ class RoboticHelper():
             if theta > 0:
                 omega_skew = (1/(2*math.sin(theta))*np.subtract(R,np.transpose(R))) 
 
+        omg = np.zeros((3,1))
         omg = mr.so3ToVec(omega_skew)       
+        omg = omg.reshape((3,1))
 
         if omg[2] > 0:
             theta = -theta
@@ -228,8 +235,7 @@ class VehicleVelocityControl():
                 car.set_velocity(run_velocity_dir)
 
                 #TODO: add angular velocity input when lat control is finished
-                #car.set_angular_velocity(run_ang_velocity)
-                time.sleep(0.1)
+                car.set_angular_velocity(run_ang_velocity)
         
     def _update_vehicle_velocity(self,twist):
 
@@ -290,7 +296,7 @@ class AV(RoamingAgent):
             Twist, self._update_vehicle_velocity)
 
         # matlab model steering to carla
-        self.control__steering_subscriber = rospy.Subscriber(
+        self.control_steering_subscriber = rospy.Subscriber(
             "/carla_plugin/" + self.role_name + "/vehicle_model_steering",
             Float64, self._update_vehicle_steering)
         
@@ -307,9 +313,9 @@ class AV(RoamingAgent):
         # to send path plan to matlab
         self.carla_path_publisher = rospy.Publisher(
             "/carla_plugin/" + self.role_name + "/vehicle_path",
-            PathPlanner, queue_size=1)
+            Path, queue_size=1)
 
-        rospy.init_node(self.role_name, anonymous=True)
+        rospy.init_node(self.role_name, anonymous=False)
 
         #TODO: import matlab test from driving scenerio
         #if dynamics_test:
@@ -342,7 +348,7 @@ class AV(RoamingAgent):
     
         #set desired speed, acceleration and jerk (0 means as fast as possible)
         #TODO: adjust back to speed limit
-        msg.speed = 7#float(1/3.6)*self._set_speed
+        msg.speed = 5#float(1/3.6)*self._set_speed
         msg.acceleration = 0
         msg.jerk = 0
 
@@ -407,6 +413,58 @@ class AV(RoamingAgent):
 
         self.carla_path_publisher.publish(msg)
 
+    def _update_path_test(self):
+        n = np.asarray(way_points.shape)
+
+        i = 0
+        
+        path = Path()
+        
+        while i < n[0]:
+
+            point = PoseStamped()
+            header = Header()
+            header.seq = i
+            header.frame_id = 'map'
+            header.stamp = rospy.Time.now()
+
+            point.header = header
+            point.pose.position.x = way_points[i,0]
+            point.pose.position.y = way_points[i,1]
+            point.pose.position.z = 0
+
+            point.pose.orientation.x = 0
+            point.pose.orientation.y = 0
+            point.pose.orientation.z = 1
+            point.pose.orientation.w = way_points[i,2]
+            
+            path.poses.append(point)
+            i = i + 1
+
+        #create current waypoint pose
+        posecurrent = Pose()
+        q = self.rh.rot_to_quaternion(self._current_rotation_r)
+
+        posecurrent.position.x = self._current_transform_c.location.x
+        posecurrent.position.y = self._current_transform_c.location.y
+        posecurrent.position.z = self._current_transform_c.location.z
+        posecurrent.orientation.w = q[0,0]
+        posecurrent.orientation.x = q[1,0]
+        posecurrent.orientation.y = q[2,0]
+        posecurrent.orientation.z = q[3,0]
+
+        msg = PathPlanner()
+
+        header.seq = 0
+        header.frame_id = 'map'
+        header.stamp = rospy.Time.now()
+        path.header = header
+
+        msg.current = posecurrent
+        msg.target = path
+
+        self.carla_path_publisher.publish(path)
+
     #=============================================================================
     # ROS calbacks
     #=============================================================================
@@ -454,23 +512,20 @@ class AV(RoamingAgent):
     #ROS callback used to testpose
     def _test_ros(self,mag):
         self.vc.velocity_set_args['magnitude'] = mag.data
-
-    
+  
     #=============================================================================
     # Step execution
     #=============================================================================
  
     def run_step(self):
-        self._update_current_position()        
-<<<<<<< HEAD
-        self._update_path_angle()
+        self._update_current_position()
+        self._update_path_test()
         self._update_set_points()
+
+        #self._update_path_angle()    
+        #self._update_path_waypoints() 
         #control = self._local_planner.run_step()
         #self._vehicle.apply_control(control)
-=======
-        self._update_set_points()
-        #self._update_path_waypoints()
->>>>>>> 4004d1195735f69e2fd2db4da283bd4c7bb956a4
 
     #def __del__(self):
         #print("deleted")
@@ -480,25 +535,31 @@ class AV(RoamingAgent):
 # ==============================================================================
 def loop(car):
 
-    car._vehicle.set_simulate_physics(True)
-
     #matlab vehicle scenerio test intial conditions
     #works on Town01
     transform = carla.Transform()
-    transform.location.x = 285.75
-    transform.location.y = -57.4002
+    transform.location.x = 302.82
+    transform.location.y = 57.5001
     transform.location.z = 0
     transform.rotation.pitch = 0
-    transform.rotataion.yaw = -0.1848
+    transform.rotation.yaw = -0.0958
     transform.rotation.roll = 0
 
     car._vehicle.set_transform(transform)
 
+    #remove tire friction to allow for smooth angular velocity control
+    vehicle_dynamics = car._vehicle.get_physics_control()
+    wheel_phyics = vehicle_dynamics.wheels
+    for i in range(4):
+        wheel_phyics[i].tire_friction = 0.0
+
+    vehicle_dynamics.wheels = wheel_phyics
+    car._vehicle.apply_physics_control(vehicle_dynamics)
     while True:
 
         #path planning updates, map based AV 
         car.run_step()   
-        time.sleep(0.1)
+        time.sleep(0.001)
 
 def exit_handler(signum, frame):
     print('\ncleaning up and closing carla plugin')
