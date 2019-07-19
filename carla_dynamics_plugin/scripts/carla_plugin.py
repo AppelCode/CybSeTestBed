@@ -19,7 +19,6 @@ import signal
 #    pass
 
 import rospy
-from carla_matlab_dynamics_ros_plugin.msg import PathPlanner
 from ackermann_msgs.msg import AckermannDrive
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
@@ -48,6 +47,9 @@ from threading import Lock
 ######## TESTING ########
 way_points = np.loadtxt('refPoses.dat')
 way_points = np.asarray(way_points)
+
+way_points_act = np.loadtxt('refPoses_act.dat')
+way_points_act = np.asarray(way_points_act)
 
 # ==============================================================================
 # -- Robotics Stuff ------------------------------------------------------------
@@ -315,6 +317,12 @@ class AV(RoamingAgent):
             "/carla_plugin/" + self.role_name + "/vehicle_path",
             Path, queue_size=1)
 
+        # to send path plan to matlab
+        self.carla_path_publisher_act = rospy.Publisher(
+            "/carla_plugin/" + self.role_name + "/vehicle_path_act",
+            Path, queue_size=1)
+
+
         rospy.init_node(self.role_name, anonymous=False)
 
         #TODO: import matlab test from driving scenerio
@@ -407,9 +415,9 @@ class AV(RoamingAgent):
         path.append(posetarget)
 
         #ROS send path
-        msg = PathPlanner()
-        msg.current = posecurrent
-        msg.target = path
+        #msg = PathPlanner()
+        #msg.current = posecurrent
+        #msg.target = path
 
         self.carla_path_publisher.publish(msg)
 
@@ -453,17 +461,67 @@ class AV(RoamingAgent):
         posecurrent.orientation.y = q[2,0]
         posecurrent.orientation.z = q[3,0]
 
-        msg = PathPlanner()
+        #msg = PathPlanner()
+        #msg.current = posecurrent
+        #msg.target = path
 
         header.seq = 0
         header.frame_id = 'map'
         header.stamp = rospy.Time.now()
         path.header = header
 
-        msg.current = posecurrent
-        msg.target = path
-
         self.carla_path_publisher.publish(path)
+
+        #act ref_poses
+        n = np.asarray(way_points_act.shape)
+
+        i = 0
+        
+        path = Path()
+        
+        while i < n[0]:
+
+            point = PoseStamped()
+            header = Header()
+            header.seq = i
+            header.frame_id = 'map'
+            header.stamp = rospy.Time.now()
+
+            point.header = header
+            point.pose.position.x = way_points_act[i,0]
+            point.pose.position.y = way_points_act[i,1]
+            point.pose.position.z = 0
+
+            point.pose.orientation.x = 0
+            point.pose.orientation.y = 0
+            point.pose.orientation.z = 1
+            point.pose.orientation.w = way_points_act[i,2]
+            
+            path.poses.append(point)
+            i = i + 1
+
+        #create current waypoint pose
+        posecurrent = Pose()
+        q = self.rh.rot_to_quaternion(self._current_rotation_r)
+
+        posecurrent.position.x = self._current_transform_c.location.x
+        posecurrent.position.y = self._current_transform_c.location.y
+        posecurrent.position.z = self._current_transform_c.location.z
+        posecurrent.orientation.w = q[0,0]
+        posecurrent.orientation.x = q[1,0]
+        posecurrent.orientation.y = q[2,0]
+        posecurrent.orientation.z = q[3,0]
+
+        #msg = PathPlanner()
+        #msg.current = posecurrent
+        #msg.target = path
+
+        header.seq = 0
+        header.frame_id = 'map'
+        header.stamp = rospy.Time.now()
+        path.header = header
+
+        self.carla_path_publisher_act.publish(path)
 
     #=============================================================================
     # ROS calbacks
@@ -538,7 +596,7 @@ def loop(car):
     #matlab vehicle scenerio test intial conditions
     #works on Town01
     transform = carla.Transform()
-    transform.location.x = 302.82
+    transform.location.x = 302.77
     transform.location.y = 57.5001
     transform.location.z = 0
     transform.rotation.pitch = 0
@@ -630,6 +688,7 @@ if __name__ == '__main__':
     #connect to the client
     client = carla.Client(args.host,args.port)
     try:
+        #world = client.load_world('Town01')
         world = client.get_world()          #grab the world
         actors = world.get_actors()         #grab all actors
 
