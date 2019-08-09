@@ -1,0 +1,129 @@
+\hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner}{}\section{scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner Class Reference}
+\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner}\index{scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner@{scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner}}
+
+
+Inheritance diagram for scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=229pt]{d1/d35/classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=229pt]{d5/d45/classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a5b8240f8fa0bc5920546f2df4393e22d}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, vehicle, opt\+\_\+dict=None)
+\item 
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_ae32fe320ee612ab68c96eb7334786d59}\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_ae32fe320ee612ab68c96eb7334786d59}} 
+def {\bfseries reset\+\_\+vehicle} (self)
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a72967b7d87ed27590a5663d4904cc2d4}{set\+\_\+speed} (self, speed)
+\item 
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_acdb4899ec37d4431164c5a99f6e1a8ca}\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_acdb4899ec37d4431164c5a99f6e1a8ca}} 
+def {\bfseries set\+\_\+global\+\_\+plan} (self, current\+\_\+plan)
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_aed8c6636540d123d047ee1e71443ae20}{run\+\_\+step} (self, debug=False)
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a5cbe3e6019aa2dd6813a966bf938ff94}\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a5cbe3e6019aa2dd6813a966bf938ff94}} 
+{\bfseries target\+\_\+waypoint}
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_ac00b6f71173ce35b08339a6f5b9142aa}\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_ac00b6f71173ce35b08339a6f5b9142aa}} 
+float {\bfseries M\+I\+N\+\_\+\+D\+I\+S\+T\+A\+N\+C\+E\+\_\+\+P\+E\+R\+C\+E\+N\+T\+A\+GE} = 0.\+9
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}LocalPlanner implements the basic behavior of following a trajectory of waypoints that is generated on-the-fly.
+The low-level motion of the vehicle is computed by using two PID controllers, one is used for the lateral control
+and the other for the longitudinal control (cruise speed).
+
+When multiple paths are available (intersections) this local planner makes a random choice.
+\end{DoxyVerb}
+ 
+
+Definition at line 33 of file local\+\_\+planner.\+py.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a5b8240f8fa0bc5920546f2df4393e22d}\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a5b8240f8fa0bc5920546f2df4393e22d}} 
+\index{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner@{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner@{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner.\+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{vehicle,  }\item[{}]{opt\+\_\+dict = {\ttfamily None} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}:param vehicle: actor to apply to local planner logic onto
+:param opt_dict: dictionary of arguments with the following semantics:
+    dt -- time difference between physics control in seconds. This is typically fixed from server side
+  using the arguments -benchmark -fps=F . In this case dt = 1/F
+
+    target_speed -- desired cruise speed in Km/h
+
+    sampling_radius -- search radius for next waypoints in seconds: e.g. 0.5 seconds ahead
+
+    lateral_control_dict -- dictionary of arguments to setup the lateral PID controller
+                    {'K_P':, 'K_D':, 'K_I':, 'dt'}
+
+    longitudinal_control_dict -- dictionary of arguments to setup the longitudinal PID controller
+                        {'K_P':, 'K_D':, 'K_I':, 'dt'}
+\end{DoxyVerb}
+ 
+
+Definition at line 46 of file local\+\_\+planner.\+py.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_aed8c6636540d123d047ee1e71443ae20}\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_aed8c6636540d123d047ee1e71443ae20}} 
+\index{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner@{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner}!run\+\_\+step@{run\+\_\+step}}
+\index{run\+\_\+step@{run\+\_\+step}!scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner@{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner}}
+\subsubsection{\texorpdfstring{run\+\_\+step()}{run\_step()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner.\+run\+\_\+step (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{debug = {\ttfamily False} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Execute one step of local planning which involves running the longitudinal and lateral PID controllers to
+follow the waypoints trajectory.
+
+:param debug: boolean flag to activate waypoints debugging
+:return:
+\end{DoxyVerb}
+ 
+
+Definition at line 189 of file local\+\_\+planner.\+py.
+
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a72967b7d87ed27590a5663d4904cc2d4}\label{classscripts_1_1agents_1_1navigation_1_1local__planner_1_1LocalPlanner_a72967b7d87ed27590a5663d4904cc2d4}} 
+\index{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner@{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner}!set\+\_\+speed@{set\+\_\+speed}}
+\index{set\+\_\+speed@{set\+\_\+speed}!scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner@{scripts\+::agents\+::navigation\+::local\+\_\+planner\+::\+Local\+Planner}}
+\subsubsection{\texorpdfstring{set\+\_\+speed()}{set\_speed()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+local\+\_\+planner.\+Local\+Planner.\+set\+\_\+speed (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{speed }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Request new target speed.
+
+:param speed: new target speed in Km/h
+:return:
+\end{DoxyVerb}
+ 
+
+Definition at line 144 of file local\+\_\+planner.\+py.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+agents/navigation/local\+\_\+planner.\+py\end{DoxyCompactItemize}

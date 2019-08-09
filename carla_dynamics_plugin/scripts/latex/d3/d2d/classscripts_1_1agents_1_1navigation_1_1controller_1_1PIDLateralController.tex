@@ -1,0 +1,62 @@
+\hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController}{}\section{scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Lateral\+Controller Class Reference}
+\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController}\index{scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Lateral\+Controller@{scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Lateral\+Controller}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController_a765e53c4705060d912d7938af72654af}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, vehicle, K\+\_\+P=1.\+0, K\+\_\+D=0.\+0, K\+\_\+I=0.\+0, dt=0.\+03)
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController_a6f0bbd083ff0c9b013ca8b4ce476f24e}{run\+\_\+step} (self, waypoint)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}PIDLateralController implements lateral control using a PID.
+\end{DoxyVerb}
+ 
+
+Definition at line 126 of file controller.\+py.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController_a765e53c4705060d912d7938af72654af}\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController_a765e53c4705060d912d7938af72654af}} 
+\index{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Lateral\+Controller.\+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{vehicle,  }\item[{}]{K\+\_\+P = {\ttfamily 1.0},  }\item[{}]{K\+\_\+D = {\ttfamily 0.0},  }\item[{}]{K\+\_\+I = {\ttfamily 0.0},  }\item[{}]{dt = {\ttfamily 0.03} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}:param vehicle: actor to apply to local planner logic onto
+:param K_P: Proportional term
+:param K_D: Differential term
+:param K_I: Integral term
+:param dt: time differential in seconds
+\end{DoxyVerb}
+ 
+
+Definition at line 131 of file controller.\+py.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController_a6f0bbd083ff0c9b013ca8b4ce476f24e}\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLateralController_a6f0bbd083ff0c9b013ca8b4ce476f24e}} 
+\index{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller}!run\+\_\+step@{run\+\_\+step}}
+\index{run\+\_\+step@{run\+\_\+step}!scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Lateral\+Controller}}
+\subsubsection{\texorpdfstring{run\+\_\+step()}{run\_step()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Lateral\+Controller.\+run\+\_\+step (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{waypoint }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Execute one step of lateral control to steer the vehicle towards a certain waypoin.
+
+:param waypoint: target waypoint
+:return: steering control in the range [-1, 1] where:
+    -1 represent maximum steering to left
+    +1 maximum steering to right
+\end{DoxyVerb}
+ 
+
+Definition at line 146 of file controller.\+py.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+agents/navigation/controller.\+py\end{DoxyCompactItemize}

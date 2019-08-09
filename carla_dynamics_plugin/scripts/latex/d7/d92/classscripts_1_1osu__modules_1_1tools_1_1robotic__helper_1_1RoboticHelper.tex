@@ -1,0 +1,127 @@
+\hypertarget{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper}{}\section{scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper Class Reference}
+\label{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper}\index{scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper@{scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper}}
+
+
+Inheritance diagram for scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=243pt]{da/df5/classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=243pt]{dc/dad/classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a4e20b6e0ee95e19dfffd04f8124bc8c0}{to\+\_\+transform} (self, carla\+\_\+transform)
+\item 
+def \hyperlink{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_ae2dc6a39a8f3b333702d1332b3762cde}{to\+\_\+rotation} (self, carla\+\_\+rotation)
+\item 
+def \hyperlink{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_ac08b92ddd486443ed8443b92f4934dd0}{convert\+\_\+orientation} (self, rotation\+\_\+matrix, array)
+\item 
+def \hyperlink{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a8dda48f4779a58ccfad6761753a7fcda}{rot\+\_\+to\+\_\+quaternion} (self, so3)
+\item 
+def \hyperlink{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a81792910e5b298b065ebc261f21f391b}{log\+\_\+rot} (self, so3)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}used for robotic screw theory needed to translate
+    MATLAB dynamics into CARLAs world
+\end{DoxyVerb}
+ 
+
+Definition at line 11 of file robotic\+\_\+helper.\+py.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_ac08b92ddd486443ed8443b92f4934dd0}\label{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_ac08b92ddd486443ed8443b92f4934dd0}} 
+\index{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}!convert\+\_\+orientation@{convert\+\_\+orientation}}
+\index{convert\+\_\+orientation@{convert\+\_\+orientation}!scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}}
+\subsubsection{\texorpdfstring{convert\+\_\+orientation()}{convert\_orientation()}}
+{\footnotesize\ttfamily def scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper.\+convert\+\_\+orientation (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{rotation\+\_\+matrix,  }\item[{}]{array }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}adjust frame of refernce
+
+    @param so3 matrix
+    @param array
+    @return so3*array: i.e array representated in rotation frame so3
+\end{DoxyVerb}
+ 
+
+Definition at line 92 of file robotic\+\_\+helper.\+py.
+
+\mbox{\Hypertarget{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a81792910e5b298b065ebc261f21f391b}\label{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a81792910e5b298b065ebc261f21f391b}} 
+\index{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}!log\+\_\+rot@{log\+\_\+rot}}
+\index{log\+\_\+rot@{log\+\_\+rot}!scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}}
+\subsubsection{\texorpdfstring{log\+\_\+rot()}{log\_rot()}}
+{\footnotesize\ttfamily def scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper.\+log\+\_\+rot (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{so3 }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}return the logarithm of rotation,
+i.e.e theta and omg that correspond to so3
+\end{DoxyVerb}
+ 
+
+Definition at line 116 of file robotic\+\_\+helper.\+py.
+
+\mbox{\Hypertarget{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a8dda48f4779a58ccfad6761753a7fcda}\label{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a8dda48f4779a58ccfad6761753a7fcda}} 
+\index{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}!rot\+\_\+to\+\_\+quaternion@{rot\+\_\+to\+\_\+quaternion}}
+\index{rot\+\_\+to\+\_\+quaternion@{rot\+\_\+to\+\_\+quaternion}!scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}}
+\subsubsection{\texorpdfstring{rot\+\_\+to\+\_\+quaternion()}{rot\_to\_quaternion()}}
+{\footnotesize\ttfamily def scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper.\+rot\+\_\+to\+\_\+quaternion (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{so3 }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}convert so3 to quaternion
+
+    @param so3
+    @return so3 -> quanternion
+\end{DoxyVerb}
+ 
+
+Definition at line 102 of file robotic\+\_\+helper.\+py.
+
+\mbox{\Hypertarget{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_ae2dc6a39a8f3b333702d1332b3762cde}\label{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_ae2dc6a39a8f3b333702d1332b3762cde}} 
+\index{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}!to\+\_\+rotation@{to\+\_\+rotation}}
+\index{to\+\_\+rotation@{to\+\_\+rotation}!scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}}
+\subsubsection{\texorpdfstring{to\+\_\+rotation()}{to\_rotation()}}
+{\footnotesize\ttfamily def scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper.\+to\+\_\+rotation (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{carla\+\_\+rotation }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}return SO3 rotation matrix from carla rotation
+
+    @param carla_rotation
+    @return rotation
+\end{DoxyVerb}
+ 
+
+Definition at line 54 of file robotic\+\_\+helper.\+py.
+
+\mbox{\Hypertarget{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a4e20b6e0ee95e19dfffd04f8124bc8c0}\label{classscripts_1_1osu__modules_1_1tools_1_1robotic__helper_1_1RoboticHelper_a4e20b6e0ee95e19dfffd04f8124bc8c0}} 
+\index{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}!to\+\_\+transform@{to\+\_\+transform}}
+\index{to\+\_\+transform@{to\+\_\+transform}!scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper@{scripts\+::osu\+\_\+modules\+::tools\+::robotic\+\_\+helper\+::\+Robotic\+Helper}}
+\subsubsection{\texorpdfstring{to\+\_\+transform()}{to\_transform()}}
+{\footnotesize\ttfamily def scripts.\+osu\+\_\+modules.\+tools.\+robotic\+\_\+helper.\+Robotic\+Helper.\+to\+\_\+transform (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{carla\+\_\+transform }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}returns se3 transform matrix from carla transform
+
+    @param carla_transform
+    @return transform
+\end{DoxyVerb}
+ 
+
+Definition at line 28 of file robotic\+\_\+helper.\+py.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+osu\+\_\+modules/tools/robotic\+\_\+helper.\+py\end{DoxyCompactItemize}

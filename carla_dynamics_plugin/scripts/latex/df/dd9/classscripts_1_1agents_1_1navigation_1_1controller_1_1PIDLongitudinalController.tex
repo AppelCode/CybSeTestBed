@@ -1,0 +1,60 @@
+\hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController}{}\section{scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Longitudinal\+Controller Class Reference}
+\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController}\index{scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Longitudinal\+Controller@{scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Longitudinal\+Controller}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController_a9b71d9ff7c2846a6c26712d468069372}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, vehicle, K\+\_\+P=1.\+0, K\+\_\+D=0.\+0, K\+\_\+I=0.\+0, dt=0.\+03)
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController_a471042867b5f536887249e9d49c6ba81}{run\+\_\+step} (self, target\+\_\+speed, debug=False)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}PIDLongitudinalController implements longitudinal control using a PID.
+\end{DoxyVerb}
+ 
+
+Definition at line 71 of file controller.\+py.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController_a9b71d9ff7c2846a6c26712d468069372}\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController_a9b71d9ff7c2846a6c26712d468069372}} 
+\index{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Longitudinal\+Controller.\+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{vehicle,  }\item[{}]{K\+\_\+P = {\ttfamily 1.0},  }\item[{}]{K\+\_\+D = {\ttfamily 0.0},  }\item[{}]{K\+\_\+I = {\ttfamily 0.0},  }\item[{}]{dt = {\ttfamily 0.03} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}:param vehicle: actor to apply to local planner logic onto
+:param K_P: Proportional term
+:param K_D: Differential term
+:param K_I: Integral term
+:param dt: time differential in seconds
+\end{DoxyVerb}
+ 
+
+Definition at line 76 of file controller.\+py.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController_a471042867b5f536887249e9d49c6ba81}\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1PIDLongitudinalController_a471042867b5f536887249e9d49c6ba81}} 
+\index{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller}!run\+\_\+step@{run\+\_\+step}}
+\index{run\+\_\+step@{run\+\_\+step}!scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+P\+I\+D\+Longitudinal\+Controller}}
+\subsubsection{\texorpdfstring{run\+\_\+step()}{run\_step()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+controller.\+P\+I\+D\+Longitudinal\+Controller.\+run\+\_\+step (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{target\+\_\+speed,  }\item[{}]{debug = {\ttfamily False} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Execute one step of longitudinal control to reach a given target speed.
+
+:param target_speed: target speed in Km/h
+:return: throttle control in the range [0, 1]
+\end{DoxyVerb}
+ 
+
+Definition at line 91 of file controller.\+py.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+agents/navigation/controller.\+py\end{DoxyCompactItemize}

@@ -1,0 +1,108 @@
+\hypertarget{namespacescripts_1_1carla__plugin}{}\section{scripts.\+carla\+\_\+plugin Namespace Reference}
+\label{namespacescripts_1_1carla__plugin}\index{scripts.\+carla\+\_\+plugin@{scripts.\+carla\+\_\+plugin}}
+
+
+does things  
+
+
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{namespacescripts_1_1carla__plugin_a23dd1a2cff4ea023f7d9a2ebad524014}{loop} (car)
+\item 
+def \hyperlink{namespacescripts_1_1carla__plugin_a779dc6d947f91025ecee9c1a340c98de}{exit\+\_\+handler} (signum, frame)
+\item 
+def \hyperlink{namespacescripts_1_1carla__plugin_a6d9a5090669749d928df2f9af020588f}{test\+\_\+velocity\+\_\+process} (car)
+\begin{DoxyCompactList}\small\item\em function used for testing \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a9147b8d018233e8bb5995067aebe955e}\label{namespacescripts_1_1carla__plugin_a9147b8d018233e8bb5995067aebe955e}} 
+{\bfseries A\+R\+G\+P\+A\+R\+S\+ER} = argparse.\+Argument\+Parser(description=\+\_\+\+\_\+doc\+\_\+\+\_\+)
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a66366fdfd79aa25a49eb498537a65281}\label{namespacescripts_1_1carla__plugin_a66366fdfd79aa25a49eb498537a65281}} 
+{\bfseries metavar}
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a035d94543e43903e49fb23d34cc11537}\label{namespacescripts_1_1carla__plugin_a035d94543e43903e49fb23d34cc11537}} 
+{\bfseries default}
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a946fd43bfc0236f68844e99c96fd460f}\label{namespacescripts_1_1carla__plugin_a946fd43bfc0236f68844e99c96fd460f}} 
+{\bfseries help}
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_afdfb0e91fe9642b2d13091b50824fe06}\label{namespacescripts_1_1carla__plugin_afdfb0e91fe9642b2d13091b50824fe06}} 
+{\bfseries type}
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a0a21ce8917fbea215f92eb3c0054bff9}\label{namespacescripts_1_1carla__plugin_a0a21ce8917fbea215f92eb3c0054bff9}} 
+{\bfseries A\+R\+GS} = A\+R\+G\+P\+A\+R\+S\+E\+R.\+parse\+\_\+args()
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a26e25d1b4dd569b149d2c93c1d71c11a}\label{namespacescripts_1_1carla__plugin_a26e25d1b4dd569b149d2c93c1d71c11a}} 
+{\bfseries C\+L\+I\+E\+NT} = carla.\+Client(A\+R\+G\+S.\+host, A\+R\+G\+S.\+port)
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a15e9a027e76ba03fa594a2799ac11077}\label{namespacescripts_1_1carla__plugin_a15e9a027e76ba03fa594a2799ac11077}} 
+{\bfseries W\+O\+R\+LD} = C\+L\+I\+E\+N\+T.\+get\+\_\+world()
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a3a7267fa69f3e9f358430b7418216bf6}\label{namespacescripts_1_1carla__plugin_a3a7267fa69f3e9f358430b7418216bf6}} 
+{\bfseries A\+C\+T\+O\+RS} = W\+O\+R\+L\+D.\+get\+\_\+actors()
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a335bd26f483bc8e44d752a779e37c559}\label{namespacescripts_1_1carla__plugin_a335bd26f483bc8e44d752a779e37c559}} 
+{\bfseries role} = temp.\+attributes\mbox{[}\textquotesingle{}role\+\_\+name\textquotesingle{}\mbox{]}
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a8a4b15393a7ce4a930796ca5a586773f}\label{namespacescripts_1_1carla__plugin_a8a4b15393a7ce4a930796ca5a586773f}} 
+{\bfseries actor} = temp
+\item 
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a1afcfa9fddc4629072d0abc8511637c7}\label{namespacescripts_1_1carla__plugin_a1afcfa9fddc4629072d0abc8511637c7}} 
+{\bfseries C\+AR} = \hyperlink{classscripts_1_1osu__modules_1_1dynamics_1_1av_1_1AV}{AV}(W\+O\+R\+LD, actor)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+does things 
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a779dc6d947f91025ecee9c1a340c98de}\label{namespacescripts_1_1carla__plugin_a779dc6d947f91025ecee9c1a340c98de}} 
+\index{scripts\+::carla\+\_\+plugin@{scripts\+::carla\+\_\+plugin}!exit\+\_\+handler@{exit\+\_\+handler}}
+\index{exit\+\_\+handler@{exit\+\_\+handler}!scripts\+::carla\+\_\+plugin@{scripts\+::carla\+\_\+plugin}}
+\subsubsection{\texorpdfstring{exit\+\_\+handler()}{exit\_handler()}}
+{\footnotesize\ttfamily def scripts.\+carla\+\_\+plugin.\+exit\+\_\+handler (\begin{DoxyParamCaption}\item[{}]{signum,  }\item[{}]{frame }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}main program decunstructor \end{DoxyVerb}
+ 
+
+Definition at line 47 of file carla\+\_\+plugin.\+py.
+
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a23dd1a2cff4ea023f7d9a2ebad524014}\label{namespacescripts_1_1carla__plugin_a23dd1a2cff4ea023f7d9a2ebad524014}} 
+\index{scripts\+::carla\+\_\+plugin@{scripts\+::carla\+\_\+plugin}!loop@{loop}}
+\index{loop@{loop}!scripts\+::carla\+\_\+plugin@{scripts\+::carla\+\_\+plugin}}
+\subsubsection{\texorpdfstring{loop()}{loop()}}
+{\footnotesize\ttfamily def scripts.\+carla\+\_\+plugin.\+loop (\begin{DoxyParamCaption}\item[{}]{car }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}main execution loop:
+        initiats AV object
+        run_step updates AV
+\end{DoxyVerb}
+ 
+
+Definition at line 15 of file carla\+\_\+plugin.\+py.
+
+\mbox{\Hypertarget{namespacescripts_1_1carla__plugin_a6d9a5090669749d928df2f9af020588f}\label{namespacescripts_1_1carla__plugin_a6d9a5090669749d928df2f9af020588f}} 
+\index{scripts\+::carla\+\_\+plugin@{scripts\+::carla\+\_\+plugin}!test\+\_\+velocity\+\_\+process@{test\+\_\+velocity\+\_\+process}}
+\index{test\+\_\+velocity\+\_\+process@{test\+\_\+velocity\+\_\+process}!scripts\+::carla\+\_\+plugin@{scripts\+::carla\+\_\+plugin}}
+\subsubsection{\texorpdfstring{test\+\_\+velocity\+\_\+process()}{test\_velocity\_process()}}
+{\footnotesize\ttfamily def scripts.\+carla\+\_\+plugin.\+test\+\_\+velocity\+\_\+process (\begin{DoxyParamCaption}\item[{}]{car }\end{DoxyParamCaption})}
+
+
+
+function used for testing 
+
+
+\begin{DoxyParams}{Parameters}
+{\em car} & link to carla vehicle \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+
+
+Definition at line 53 of file carla\+\_\+plugin.\+py.
+

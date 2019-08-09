@@ -1,0 +1,90 @@
+\hypertarget{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent}{}\section{scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent Class Reference}
+\label{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent}\index{scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent@{scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent}}
+
+
+Inheritance diagram for scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=235pt]{d7/d3d/classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=235pt]{dd/ddc/classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_a69580567044bfe09eba8da5bebd89beb}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, vehicle, target\+\_\+speed=20)
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_acccc65ae1b4c49557f59b83eb9bc1502}{set\+\_\+destination} (self, location)
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_aa6ae836338e7fe24be266108cfe99894}{run\+\_\+step} (self, debug=False)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}BasicAgent implements a basic agent that navigates scenes to reach a given
+target destination. This agent respects traffic lights and other vehicles.
+\end{DoxyVerb}
+ 
+
+Definition at line 20 of file basic\+\_\+agent.\+py.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_a69580567044bfe09eba8da5bebd89beb}\label{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_a69580567044bfe09eba8da5bebd89beb}} 
+\index{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent@{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent@{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent.\+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{vehicle,  }\item[{}]{target\+\_\+speed = {\ttfamily 20} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}:param vehicle: actor to apply to local planner logic onto
+\end{DoxyVerb}
+ 
+
+Definition at line 26 of file basic\+\_\+agent.\+py.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_aa6ae836338e7fe24be266108cfe99894}\label{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_aa6ae836338e7fe24be266108cfe99894}} 
+\index{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent@{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent}!run\+\_\+step@{run\+\_\+step}}
+\index{run\+\_\+step@{run\+\_\+step}!scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent@{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent}}
+\subsubsection{\texorpdfstring{run\+\_\+step()}{run\_step()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent.\+run\+\_\+step (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{debug = {\ttfamily False} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Execute one step of navigation.
+:return: carla.VehicleControl
+\end{DoxyVerb}
+ 
+
+Definition at line 84 of file basic\+\_\+agent.\+py.
+
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_acccc65ae1b4c49557f59b83eb9bc1502}\label{classscripts_1_1agents_1_1navigation_1_1basic__agent_1_1BasicAgent_acccc65ae1b4c49557f59b83eb9bc1502}} 
+\index{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent@{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent}!set\+\_\+destination@{set\+\_\+destination}}
+\index{set\+\_\+destination@{set\+\_\+destination}!scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent@{scripts\+::agents\+::navigation\+::basic\+\_\+agent\+::\+Basic\+Agent}}
+\subsubsection{\texorpdfstring{set\+\_\+destination()}{set\_destination()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+basic\+\_\+agent.\+Basic\+Agent.\+set\+\_\+destination (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{location }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}This method creates a list of waypoints from agent's position to destination location
+based on the route returned by the global router
+\end{DoxyVerb}
+ 
+
+Definition at line 49 of file basic\+\_\+agent.\+py.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+agents/navigation/basic\+\_\+agent.\+py\end{DoxyCompactItemize}

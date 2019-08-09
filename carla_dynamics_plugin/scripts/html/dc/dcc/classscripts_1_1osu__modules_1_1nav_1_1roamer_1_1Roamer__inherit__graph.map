@@ -1,0 +1,5 @@
+<map id="scripts.osu_modules.nav.roamer.Roamer" name="scripts.osu_modules.nav.roamer.Roamer">
+<area shape="rect" id="node5" href="$d8/d8a/classscripts_1_1osu__modules_1_1dynamics_1_1av_1_1AV.html" title="scripts.osu_modules.dynamics.av.AV" alt="" coords="10,319,253,345"/>
+<area shape="rect" id="node2" href="$d4/db3/classscripts_1_1osu__modules_1_1nav_1_1planner_1_1Plan.html" title="scripts.osu_modules.nav.planner.Plan" alt="" coords="10,155,253,181"/>
+<area shape="rect" id="node3" href="$dc/d3b/classscripts_1_1osu__modules_1_1nav_1_1navigator_1_1Nav.html" title="scripts.osu_modules.nav.navigator.Nav" alt="" coords="5,80,257,107"/>
+</map>

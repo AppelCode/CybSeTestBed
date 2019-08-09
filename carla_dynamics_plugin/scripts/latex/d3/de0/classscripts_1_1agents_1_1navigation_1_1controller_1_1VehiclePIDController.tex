@@ -1,0 +1,68 @@
+\hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController}{}\section{scripts.\+agents.\+navigation.\+controller.\+Vehicle\+P\+I\+D\+Controller Class Reference}
+\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController}\index{scripts.\+agents.\+navigation.\+controller.\+Vehicle\+P\+I\+D\+Controller@{scripts.\+agents.\+navigation.\+controller.\+Vehicle\+P\+I\+D\+Controller}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController_a46957cfa95db8a8030be5bd50e0a131e}{\+\_\+\+\_\+init\+\_\+\+\_\+} (self, vehicle, args\+\_\+lateral=None, args\+\_\+longitudinal=None)
+\item 
+def \hyperlink{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController_a4f79d7214620c693ee175895ab95c8e7}{run\+\_\+step} (self, target\+\_\+speed, waypoint)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}VehiclePIDController is the combination of two PID controllers (lateral and longitudinal) to perform the
+low level control a vehicle from client side
+\end{DoxyVerb}
+ 
+
+Definition at line 20 of file controller.\+py.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController_a46957cfa95db8a8030be5bd50e0a131e}\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController_a46957cfa95db8a8030be5bd50e0a131e}} 
+\index{scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller}!\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}}
+\index{\+\_\+\+\_\+init\+\_\+\+\_\+@{\+\_\+\+\_\+init\+\_\+\+\_\+}!scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller}}
+\subsubsection{\texorpdfstring{\+\_\+\+\_\+init\+\_\+\+\_\+()}{\_\_init\_\_()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+controller.\+Vehicle\+P\+I\+D\+Controller.\+\_\+\+\_\+init\+\_\+\+\_\+ (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{vehicle,  }\item[{}]{args\+\_\+lateral = {\ttfamily None},  }\item[{}]{args\+\_\+longitudinal = {\ttfamily None} }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}:param vehicle: actor to apply to local planner logic onto
+:param args_lateral: dictionary of arguments to set the lateral PID controller using the following semantics:
+             K_P -- Proportional term
+             K_D -- Differential term
+             K_I -- Integral term
+:param args_longitudinal: dictionary of arguments to set the longitudinal PID controller using the following
+semantics:
+             K_P -- Proportional term
+             K_D -- Differential term
+             K_I -- Integral term
+\end{DoxyVerb}
+ 
+
+Definition at line 26 of file controller.\+py.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController_a4f79d7214620c693ee175895ab95c8e7}\label{classscripts_1_1agents_1_1navigation_1_1controller_1_1VehiclePIDController_a4f79d7214620c693ee175895ab95c8e7}} 
+\index{scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller}!run\+\_\+step@{run\+\_\+step}}
+\index{run\+\_\+step@{run\+\_\+step}!scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller@{scripts\+::agents\+::navigation\+::controller\+::\+Vehicle\+P\+I\+D\+Controller}}
+\subsubsection{\texorpdfstring{run\+\_\+step()}{run\_step()}}
+{\footnotesize\ttfamily def scripts.\+agents.\+navigation.\+controller.\+Vehicle\+P\+I\+D\+Controller.\+run\+\_\+step (\begin{DoxyParamCaption}\item[{}]{self,  }\item[{}]{target\+\_\+speed,  }\item[{}]{waypoint }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Execute one step of control invoking both lateral and longitudinal PID controllers to reach a target waypoint
+at a given target_speed.
+
+:param target_speed: desired vehicle speed
+:param waypoint: target location encoded as a waypoint
+:return: distance (in meters) to the waypoint
+\end{DoxyVerb}
+ 
+
+Definition at line 49 of file controller.\+py.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+agents/navigation/controller.\+py\end{DoxyCompactItemize}
