@@ -13,7 +13,7 @@ from nav_msgs.msg import Path
 from std_msgs.msg import Float64, Header
 
 
-from scripts.osu_modules.dynamics.vel_control import VehicleVelocityControl
+from osu_modules.dynamics.vel_control import VehicleVelocityControl
 from ..nav.roamer import Roamer
 from ..tools.robotic_helper import RoboticHelper
 
@@ -24,7 +24,7 @@ WAYPOINTS = np.asarray(WAYPOINTS)
 WAYPOINTSACT = np.loadtxt('refPoses_act.dat')
 WAYPOINTSACT = np.asarray(WAYPOINTSACT)
 
-class AV(Roamer):
+class AV(object):
     """ Autonomous Vehicle class used to operate carla vehicle
 
         super Roamer determines path
@@ -41,7 +41,7 @@ class AV(Roamer):
                                   [0, 0, -1]])
 
     def __init__(self, world, vehicle_local):
-        super(AV, self).__init__(vehicle_local)
+        #super(AV, self).__init__(vehicle_local)
 
         #vehicle enviroenment setup information
         self._vehicle = vehicle_local
@@ -60,7 +60,7 @@ class AV(Roamer):
         self._vc = VehicleVelocityControl(self._vehicle.id, self._world)
 
         #waypoint generator
-        super(AV, self).run_step()
+        #super(AV, self).run_step()
 
         #Path information initialization
         self._current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
@@ -101,7 +101,7 @@ class AV(Roamer):
             Path, queue_size=1)
 
 
-        rospy.init_node(self.role_name, anonymous=False)
+        rospy.init_node(self.role_name, anonymous=True)
 
 
     #=============================================================================

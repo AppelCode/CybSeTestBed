@@ -30,15 +30,17 @@ class VehicleVelocityControl(object):
         numjobs = 1
         jobs = []
         for i in range(numjobs):
-            _p = multiprocessing.Process(target=self._vehicle_control, args=(self._world))
+            _p = multiprocessing.Process(target=self._vehicle_control)
             jobs.append(_p)
             _p.start()
 
     #process used to move vehicle in carla
-    def _vehicle_control(self, world):
+    def _vehicle_control(self):
 
-        actors = world.get_actors()
-        car = actors.find(self._car_id)
+        CLIENT = carla.Client('127.0.0.1', 2000)
+        WORLD = CLIENT.get_world()          #grab the world
+        ACTORS = WORLD.get_actors()         #grab all actors
+        car = ACTORS.find(self._car_id)
 
         #run vehicle in x direction
         while True:
@@ -65,7 +67,6 @@ class VehicleVelocityControl(object):
                 run_velocity_dir = carla.Vector3D(x=x_dir, y=y_dir, z=z_dir)
                 run_ang_velocity = carla.Vector3D(x=x_ang, y=y_ang, z=z_ang)
                 car.set_velocity(run_velocity_dir)
-
                 car.set_angular_velocity(run_ang_velocity)
 
     def _update_vehicle_velocity(self, twist):

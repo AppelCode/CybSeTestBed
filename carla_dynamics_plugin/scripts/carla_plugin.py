@@ -10,7 +10,7 @@ import sys
 import time
 import numpy as np
 import carla
-from scripts.osu_modules.dynamics.av import AV
+from osu_modules.dynamics.av import AV
 
 def loop(car):
     """ main execution loop:
@@ -21,7 +21,7 @@ def loop(car):
     #matlab vehicle scenerio test intial conditions
     #works on Town01
     transform = carla.Transform()
-    transform.location.x = 302.77
+    transform.location.x = 302.82
     transform.location.y = 57.5001
     transform.location.z = 0
     transform.rotation.pitch = 0
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     ARGPARSER.add_argument(
         '--host',
         metavar='H',
-        default='192.168.1.36',
+        default='127.0.0.1',
         help='IP of the host server (default: 127.0.0.1)'
     )
     ARGPARSER.add_argument(
@@ -119,15 +119,16 @@ if __name__ == '__main__':
     #connect to the client
     CLIENT = carla.Client(ARGS.host, ARGS.port)
 
-    #world = client.load_world('Town01')
+    #world = CLIENT.load_world('Town01')
     WORLD = CLIENT.get_world()          #grab the world
     ACTORS = WORLD.get_actors()         #grab all actors
 
     for temp in ACTORS:
         if temp.attributes.has_key('role_name'):
             role = temp.attributes['role_name']
-            if role == "ego_vehicle":
+            if role == 'ego-vehicle':
                 actor = temp
+                break
             else:
                 print 'actor does not exist'
                 exit()
